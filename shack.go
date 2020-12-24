@@ -6,24 +6,18 @@ import (
 )
 
 type Engine struct {
-	router       *Router
-	middlewares  []func(http.Handler) http.Handler
+	router *Router
 }
 
-
+/*
 func New() *Engine{
 	return &Engine{}
 }
+*/
 
 
-func(e *Engine) Use(middleware func(http.Handler) http.Handler) {
-	e.middlewares = append(e.middlewares, middleware)
-}
-
-
-func(e *Engine) ListenAndServe(addr string, router *Router) {
-	e.router = router
-	err := http.ListenAndServe(addr, e.router)
+func ListenAndServe(addr string, router *Router) {
+	err := http.ListenAndServe(addr, router)
 	if err != nil {
 		panic(fmt.Sprint("shack: ", err))
 	}

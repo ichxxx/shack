@@ -9,30 +9,40 @@ import (
 func TestTrie(t *testing.T) {
 	handler1 := HandlerFunc(func(*Context){})
 	handler2 := HandlerFunc(func(*Context){})
+	handler3 := HandlerFunc(func(*Context){})
 	inputs := []struct{
-		method  methodType
+		method  string
 		pattern string
 		handler HandlerFunc
 	}{
+		{GET,"/",             handler1},
 		{GET,"/foo/:var/bar", handler1},
 		{GET,"/foo/bar",      handler2},
+		{GET,"/bar/*path",    handler3},
+		{GET,"/*path",        handler3},
+		{ALL, "/foo/bar/all", handler2},
 	}
 
 	tests := []struct{
-		method  methodType
+		method  string
 		path    string
 		ok      bool
 		handler HandlerFunc
 		pKey    string
 		pValue  string
 	}{
-		{GET, "/foo/test/bar", true,  handler1, "var", "test"},
-		{GET, "/foo/bar",      true,  handler2, "",    ""},
-		{GET, "/foo/test",     false, nil,      "var", "test"},
-		{GET, "/foo/test/foo", false, nil,      "var", "test"},
-		{GET, "/foo/bar/foo",  false, nil,      "",    ""},
-		{POST,"/foo/test/bar", true,  nil,      "var", "test"},
-		{POST,"/foo/bar/foo",  false, nil,      "",    ""},
+		{GET,    "/",             true,  handler1, "",    ""},
+		{GET,    "/foo/test/bar", true,  handler1, "var", "test"},
+		{GET,    "/foo/bar",      true,  handler2, "",    ""},
+		{GET,    "/bar/f/o/o",    true,  handler3, "path","/f/o/o"},
+		{GET,    "/f/o/bar.html", true,  handler3, "path","/f/o/bar.html"},
+		{GET,    "/foo/test",     true,  nil,      "var", "test"},
+		{GET,    "/foo/test/foo", false, nil,      "var", "test"},
+		{GET,    "/foo/bar/foo",  false, nil,      "",    ""},
+		{POST,   "/foo/test/bar", true,  nil,      "var", "test"},
+		{POST,   "/foo/bar/foo",  false, nil,      "",    ""},
+		{POST,   "/foo/bar/all",  true,  handler2, "",    ""},
+		{DELETE, "/foo/bar/all",  true,  handler2, "",    ""},
 	}
 
 	trie := newTrie()
