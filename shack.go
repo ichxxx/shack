@@ -5,16 +5,6 @@ import (
 	"net/http"
 )
 
-type Engine struct {
-	router *Router
-}
-
-/*
-func New() *Engine{
-	return &Engine{}
-}
-*/
-
 
 func ListenAndServe(addr string, router *Router) {
 	err := http.ListenAndServe(addr, router)
@@ -22,4 +12,10 @@ func ListenAndServe(addr string, router *Router) {
 		panic(fmt.Sprint("shack: ", err))
 	}
 	return
+}
+
+
+func Logger(name string) *logger {
+	Log.name = name
+	return Log
 }

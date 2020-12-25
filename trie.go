@@ -14,11 +14,12 @@ const (
 
 
 type trie struct {
-	handler    map[string]HandlerFunc
+	handlers   map[string][]HandlerFunc
 	isParam    bool
 	isPath     bool
 	p          string
 	child      map[string]*trie
+	m          string
 }
 
 
@@ -51,7 +52,7 @@ func(t *trie) merge(other *trie) {
 
 func newTrie() *trie {
 	return &trie{
-		handler: make(map[string]HandlerFunc, 7),
+		handlers: make(map[string][]HandlerFunc, 7),
 		child: make(map[string]*trie),
 	}
 }
@@ -72,7 +73,13 @@ func isVaildPattern(pattern string) (isVaild bool) {
 }
 
 
-func(t *trie) insert(method, pattern string, handler HandlerFunc) {
+func(t *trie) With(middleware ...HandlerFunc) {
+	// insert from head
+	t.handlers[t.m] = append(middleware, t.handlers[t.m]...)
+}
+
+
+func(t *trie) insert(method, pattern string, handler HandlerFunc) *trie {
 	if !isVaildPattern(pattern) {
 		panic("shack: pattern is not valid")
 	}
@@ -109,22 +116,23 @@ func(t *trie) insert(method, pattern string, handler HandlerFunc) {
 	if handler != nil {
 		switch method {
 		case ALL:
-			if len(t.handler) > 0 {
+			if len(t.handlers) > 0 {
 				panic("shack: can't route method 'ALL', method duplicated")
 			}
 		default:
-			if t.handler[ALL] != nil || t.handler[method] != nil {
+			if t.handlers[ALL] != nil || t.handlers[method] != nil {
 				panic(fmt.Sprintf("shack: can't route method '%s', method duplicated", method))
 			}
 		}
-		t.handler[method] = handler
+		t.m = method
+		t.handlers[method] = append(t.handlers[method], handler)
 	}
 
-	return
+	return t
 }
 
 
-func(t *trie) search(method, pattern string) (handler HandlerFunc, params map[string]string, ok bool) {
+func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map[string]string, ok bool) {
 	i := 1
 	var splitLoc int
 	for ; i < len(pattern); i++ {
@@ -169,9 +177,9 @@ func(t *trie) search(method, pattern string) (handler HandlerFunc, params map[st
 		params[t.p] = pattern[splitLoc+1:i]
 	}
 
-	handler = t.handler[method]
-	if handler == nil {
-		handler = t.handler[ALL]
+	handlers = t.handlers[method]
+	if handlers == nil {
+		handlers = t.handlers[ALL]
 	}
 	ok = true
 	return
