@@ -7,9 +7,9 @@ import (
 )
 
 const (
-	param = ':'
-	path  = '*'
-	wild  = "*"
+	_PARAM = ':'
+	_PATH  = '*'
+	_WILD  = "*"
 )
 
 
@@ -21,33 +21,6 @@ type trie struct {
 	child      map[string]*trie
 	m          string
 }
-
-
-/*
-func(t *trie) merge(other *trie) {
-	if t.isParam != t.isParam || t.isPath != other.isPath || t.p != other.p {
-		panic("shack: can't merge, trie do not have same root")
-	}
-
-	for method, handler := range other.handler {
-		if tHandler, found := t.handler[method]; found {
-			if reflect.ValueOf(handler).Pointer() != reflect.ValueOf(tHandler).Pointer() {
-				panic(fmt.Sprintf("shack: method %s of the two trie conflicts", method))
-			}
-		} else {
-			t.handler[method] = handler
-		}
-	}
-
-	for key, trie := range other.child {
-		if _, found := t.child[key]; found {
-			panic(fmt.Sprintf("shack: child %s of the two trie conficts", key))
-		} else {
-			t.child[key] = trie
-		}
-	}
-}
-*/
 
 
 func newTrie() *trie {
@@ -63,12 +36,18 @@ func isWild(segment string) bool {
 		return false
 	}
 
-	return segment[0] == param || segment[0] == path
+	return segment[0] == _PARAM || segment[0] == _PATH
 }
 
 
-func isVaildPattern(pattern string) (isVaild bool) {
-	isVaild, _ = regexp.MatchString(`^\/[:*.\-\w]*(\/[:*.\-\w]+)*$`, pattern)
+func isValidPath(path string) (isValid bool) {
+	isValid, _ = regexp.MatchString(`^\/[:*.\-\w]*(\/[:*.\-\w]+)*$`, path)
+	return
+}
+
+
+func isValidPattern(pattern string) (isValid bool) {
+	isValid, _ = regexp.MatchString(`^\/[\-\w]*(\/[\-\w]+)*$`, pattern)
 	return
 }
 
@@ -79,12 +58,12 @@ func(t *trie) With(middleware ...HandlerFunc) {
 }
 
 
-func(t *trie) insert(method, pattern string, handler HandlerFunc) *trie {
-	if !isVaildPattern(pattern) {
-		panic("shack: pattern is not valid")
+func(t *trie) insert(method, path string, handler HandlerFunc) *trie {
+	if !isValidPath(path) {
+		panic(fmt.Sprintf("shack: path '%s' is not valid", path))
 	}
 
-	segments := strings.Split(pattern, "/")
+	segments := strings.Split(path, "/")
 	for i, segment := range segments {
 		if segment == "" {
 			continue
@@ -92,7 +71,7 @@ func(t *trie) insert(method, pattern string, handler HandlerFunc) *trie {
 
 		p := segment
 		if isWild(segment) {
-			segment = wild
+			segment = _WILD
 		}
 
 		if _, ok := t.child[segment]; !ok {
@@ -101,26 +80,26 @@ func(t *trie) insert(method, pattern string, handler HandlerFunc) *trie {
 
 		t = t.child[segment]
 		switch p[0] {
-		case param:
+		case _PARAM:
 			t.isParam = true
 			t.p = p[1:]
-		case path:
+		case _PATH:
 			t.isPath = true
 			t.p = p[1:]
 			if i != len(segments)-1 {
-				panic("shack: *path can only use in the last")
+				panic(fmt.Sprintf("shack: '%s' *path can only use in the last", path))
 			}
 		}
 	}
 
 	if handler != nil {
 		switch method {
-		case ALL:
+		case _ALL:
 			if len(t.handlers) > 0 {
 				panic("shack: can't route method 'ALL', method duplicated")
 			}
 		default:
-			if t.handlers[ALL] != nil || t.handlers[method] != nil {
+			if t.handlers[_ALL] != nil || t.handlers[method] != nil {
 				panic(fmt.Sprintf("shack: can't route method '%s', method duplicated", method))
 			}
 		}
@@ -132,12 +111,12 @@ func(t *trie) insert(method, pattern string, handler HandlerFunc) *trie {
 }
 
 
-func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map[string]string, ok bool) {
+func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[string]string, ok bool) {
 	i := 1
 	var splitLoc int
-	for ; i < len(pattern); i++ {
-		if pattern[i] == '/' {
-			next := t.next(pattern[splitLoc+1:i])
+	for ; i < len(path); i++ {
+		if path[i] == '/' {
+			next := t.next(path[splitLoc+1:i])
 			if next == nil {
 				return
 			}
@@ -147,7 +126,7 @@ func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = pattern[splitLoc:]
+				params[t.p] = path[splitLoc:]
 				break
 			}
 
@@ -155,7 +134,7 @@ func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = pattern[splitLoc+1:i]
+				params[t.p] = path[splitLoc+1:i]
 			}
 
 			splitLoc = i
@@ -163,7 +142,7 @@ func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map
 	}
 
 	if i > 1 && !t.isPath {
-		next := t.next(pattern[splitLoc+1:i])
+		next := t.next(path[splitLoc+1:i])
 		if next == nil {
 			return
 		}
@@ -174,12 +153,12 @@ func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map
 		if params == nil {
 			params = make(map[string]string)
 		}
-		params[t.p] = pattern[splitLoc+1:i]
+		params[t.p] = path[splitLoc+1:i]
 	}
 
 	handlers = t.handlers[method]
 	if handlers == nil {
-		handlers = t.handlers[ALL]
+		handlers = t.handlers[_ALL]
 	}
 	ok = true
 	return
@@ -189,7 +168,7 @@ func(t *trie) search(method, pattern string) (handlers []HandlerFunc, params map
 func(t *trie) next(segment string) (next *trie) {
 	next = t.child[segment]
 	if next == nil {
-		next = t.child[wild]
+		next = t.child[_WILD]
 	}
 	return
 }

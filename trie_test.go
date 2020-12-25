@@ -15,34 +15,34 @@ func TestTrie(t *testing.T) {
 		pattern string
 		handler HandlerFunc
 	}{
-		{GET,"/",             handler1},
-		{GET,"/foo/:var/bar", handler1},
-		{GET,"/foo/bar",      handler2},
-		{GET,"/bar/*path",    handler3},
-		{GET,"/*path",        handler3},
-		{ALL, "/foo/bar/all", handler2},
+		{_GET,"/",             handler1},
+		{_GET,"/foo/:var/bar", handler1},
+		{_GET,"/foo/bar",      handler2},
+		{_GET,"/bar/*path",    handler3},
+		{_GET,"/*path",        handler3},
+		{_ALL, "/foo/bar/all", handler2},
 	}
 
 	tests := []struct{
-		method  string
-		path    string
-		ok      bool
-		handler HandlerFunc
-		pKey    string
-		pValue  string
+		method   string
+		path     string
+		ok       bool
+		handler  HandlerFunc
+		pKey     string
+		pValue   string
 	}{
-		{GET,    "/",             true,  handler1, "",    ""},
-		{GET,    "/foo/test/bar", true,  handler1, "var", "test"},
-		{GET,    "/foo/bar",      true,  handler2, "",    ""},
-		{GET,    "/bar/f/o/o",    true,  handler3, "path","/f/o/o"},
-		{GET,    "/f/o/bar.html", true,  handler3, "path","/f/o/bar.html"},
-		{GET,    "/foo/test",     true,  nil,      "var", "test"},
-		{GET,    "/foo/test/foo", false, nil,      "var", "test"},
-		{GET,    "/foo/bar/foo",  false, nil,      "",    ""},
-		{POST,   "/foo/test/bar", true,  nil,      "var", "test"},
-		{POST,   "/foo/bar/foo",  false, nil,      "",    ""},
-		{POST,   "/foo/bar/all",  true,  handler2, "",    ""},
-		{DELETE, "/foo/bar/all",  true,  handler2, "",    ""},
+		{_GET,    "/",             true,  handler1, "",    ""},
+		{_GET,    "/foo/test/bar", true,  handler1, "var", "test"},
+		{_GET,    "/foo/bar",      true,  handler2, "",    ""},
+		{_GET,    "/bar/f/o/o",    true,  handler3, "path","/f/o/o"},
+		{_GET,    "/f/o/bar.html", true,  handler3, "path","/f/o/bar.html"},
+		{_GET,    "/foo/test",     true,  nil,      "var", "test"},
+		{_GET,    "/foo/test/foo", false, nil,      "var", "test"},
+		{_GET,    "/foo/bar/foo",  false, nil,      "",    ""},
+		{_POST,   "/foo/test/bar", true,  nil,      "var", "test"},
+		{_POST,   "/foo/bar/foo",  false, nil,      "",    ""},
+		{_POST,   "/foo/bar/all",  true,  handler2, "",    ""},
+		{_DELETE, "/foo/bar/all",  true,  handler2, "",    ""},
 	}
 
 	trie := newTrie()
@@ -51,8 +51,8 @@ func TestTrie(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		handler, param, ok := trie.search(test.method, test.path)
-		if fmt.Sprintf("%v", handler) != fmt.Sprintf("%v", test.handler) {
+		handlers, param, ok := trie.search(test.method, test.path)
+		if handler := popHandler(handlers); fmt.Sprintf("%v", handler) != fmt.Sprintf("%v", test.handler) {
 			t.Errorf("input [%d]: expecting handler:%v, got:%v", i, test.handler, handler)
 		}
 		if param[test.pKey] != test.pValue {
@@ -64,4 +64,12 @@ func TestTrie(t *testing.T) {
 
 
 	}
+}
+
+
+func popHandler(handlers []HandlerFunc) HandlerFunc {
+	if len(handlers) > 0 {
+		return handlers[0]
+	}
+	return nil
 }

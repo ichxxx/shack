@@ -8,14 +8,14 @@ import (
 
 
 const (
-	GET     = "GET"
-	POST    = "POST"
-	DELETE  = "DELETE"
-	PUT     = "PUT"
-	PATCH   = "PATCH"
-	OPTIONS = "OPTIONS"
-	HEAD    = "HEAD"
-	ALL     = "ALL"
+	_GET     = "GET"
+	_POST    = "POST"
+	_DELETE  = "DELETE"
+	_PUT     = "PUT"
+	_PATCH   = "PATCH"
+	_OPTIONS = "OPTIONS"
+	_HEAD    = "HEAD"
+	_ALL     = "ALL"
 )
 
 type HandlerFunc func(*Context)
@@ -34,14 +34,6 @@ func NewRouter() *Router {
 		sub : make(map[string]*Router),
 		trie: newTrie(),
 	}
-}
-
-
-func DefaultRouter() *Router {
-	r := NewRouter()
-	//r.Use(middleware.Recovery())
-	//r.Use(middleware.AccessLog())
-	return r
 }
 
 
@@ -84,37 +76,37 @@ func(r *Router) handler(ctx *Context) {
 
 
 func(r *Router) GET(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(GET, pattern, handler)
+	return r.trie.insert(_GET, pattern, handler)
 }
 
 
 func(r *Router) POST(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(POST, pattern, handler)
+	return r.trie.insert(_POST, pattern, handler)
 }
 
 
 func(r *Router) DELETE(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(DELETE, pattern, handler)
+	return r.trie.insert(_DELETE, pattern, handler)
 }
 
 
 func(r *Router) PUT(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(PUT, pattern, handler)
+	return r.trie.insert(_PUT, pattern, handler)
 }
 
 
 func(r *Router) PATCH(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(PATCH, pattern, handler)
+	return r.trie.insert(_PATCH, pattern, handler)
 }
 
 
 func(r *Router) OPTIONS(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(OPTIONS, pattern, handler)
+	return r.trie.insert(_OPTIONS, pattern, handler)
 }
 
 
 func(r *Router) HEAD(pattern string, handler func(*Context)) *trie {
-	return r.trie.insert(HEAD, pattern, handler)
+	return r.trie.insert(_HEAD, pattern, handler)
 }
 
 
@@ -124,7 +116,7 @@ func(r *Router) Use(middleware ...HandlerFunc) {
 
 
 func(r *Router) Mount(pattern string, router *Router) {
-	if !isVaildPattern(pattern) {
+	if !isValidPattern(pattern) {
 		panic(fmt.Sprintf("shack: pattern %s is not valid", pattern))
 	}
 
@@ -143,7 +135,7 @@ func(r *Router) Mount(pattern string, router *Router) {
 
 
 func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
-	if !isVaildPattern(pattern) {
+	if !isValidPattern(pattern) {
 		panic(fmt.Sprintf("shack: pattern %s is not valid", pattern))
 	}
 
@@ -151,24 +143,24 @@ func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 		panic(fmt.Sprintf("shack: fn is nil in grouping %s", pattern))
 	}
 
-	// todo: 优化
 	sub := NewRouter()
 	fn(sub)
-	if r.trie.child[pattern[1:]] != nil {
-		for k, v := range sub.trie.child {
-			r.trie.child[pattern[1:]].child[k] = v
+	if child, found := r.trie.child[pattern[1:]]; found {
+		for p, t := range sub.trie.child {
+			child.child[p] = t
 		}
 		return r
 	}
 
-	r.Mount(pattern, sub)
+	r.sub[pattern] = sub
+	r.trie.child[pattern[1:]] = sub.trie
 	return r
 }
 
 
 // Handle adds routes for `pattern` that matches all HTTP methods.
 func(r *Router) Handle(pattern string, fn HandlerFunc) {
-	r.trie.insert(ALL, pattern, fn)
+	r.trie.insert(_ALL, pattern, fn)
 }
 
 
