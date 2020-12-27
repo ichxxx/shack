@@ -80,8 +80,8 @@ func(l *logger) Encoding(encoding string) *logger {
 }
 
 
-func(l *logger) Output(path ...string) *logger {
-	l.outputPaths = append(l.outputPaths, path...)
+func(l *logger) Output(paths ...string) *logger {
+	l.outputPaths = append(l.outputPaths, paths...)
 	return l
 }
 
@@ -92,43 +92,43 @@ func(l *logger) Dev() *logger {
 }
 
 
-func(l *logger) Debug(msg string, kv ...interface{}) {
+func(l *logger) Debug(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Debugw(msg, kv...)
+		l.core.Debugw(msg, keyAndValues...)
 	}
 }
 
 
-func(l *logger) Info(msg string, kv ...interface{}) {
+func(l *logger) Info(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Infow(msg, kv...)
+		l.core.Infow(msg, keyAndValues...)
 	}
 }
 
 
-func(l *logger) Warn(msg string, kv ...interface{}) {
+func(l *logger) Warn(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Warnw(msg, kv...)
+		l.core.Warnw(msg, keyAndValues...)
 	}
 }
 
 
-func(l *logger) Error(msg string, kv ...interface{}) {
+func(l *logger) Error(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Errorw(msg, kv...)
+		l.core.Errorw(msg, keyAndValues...)
 	}
 }
 
 
-func(l *logger) Panic(msg string, kv ...interface{}) {
+func(l *logger) Panic(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Panicw(msg, kv...)
+		l.core.Panicw(msg, keyAndValues...)
 	}
 }
 
 
-func(l *logger) Fatal(msg string, kv ...interface{}) {
+func(l *logger) Fatal(msg string, keyAndValues ...interface{}) {
 	if l.enable {
-		l.core.Fatalw(msg, kv...)
+		l.core.Fatalw(msg, keyAndValues...)
 	}
 }

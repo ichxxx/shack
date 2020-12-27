@@ -56,10 +56,10 @@ func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
 
 
 func(r *Router) handler(ctx *Context) {
-	handler, params, ok := r.trie.search(ctx.Method, ctx.Path)
-	if ok && handler != nil  {
+	handlers, params, ok := r.trie.search(ctx.Method, ctx.Path)
+	if ok && len(handlers) > 0  {
 		ctx.Params = params
-		ctx.handlers = append(ctx.handlers, handler...)
+		ctx.handlers = append(ctx.handlers, handlers...)
 		ctx.Next()
 	} else if ok {
 		ctx.Status(http.StatusMethodNotAllowed)
@@ -110,8 +110,8 @@ func(r *Router) HEAD(pattern string, handler func(*Context)) *trie {
 }
 
 
-func(r *Router) Use(middleware ...HandlerFunc) {
-	r.groupMiddlewares = append(r.groupMiddlewares, middleware...)
+func(r *Router) Use(middlewares ...HandlerFunc) {
+	r.groupMiddlewares = append(r.groupMiddlewares, middlewares...)
 }
 
 
@@ -128,7 +128,6 @@ func(r *Router) Mount(pattern string, router *Router) {
 		panic(fmt.Sprintf("shack: pattern %s to mount is already exist", pattern))
 	}
 
-	// todo: 冲突检测
 	r.sub[pattern] = router
 	r.trie.child[pattern[1:]] = router.trie
 }
@@ -175,16 +174,3 @@ func(r *Router) NotFound(fn HandlerFunc) {
 func(r *Router) MethodNotAllowed(fn HandlerFunc) {
 	r.methodNotAllowedHandler = fn
 }
-
-
-/*
-
-func(r *Router) Default() {
-	r.handler.Use(middleware.RequestID)
-	r.handler.Use(middleware.RealIP)
-	r.handler.Use(middleware.Logger)
-	r.handler.Use(middleware.Recoverer)
-	r.handler.Use(middleware.SetHeader("Content-type", "application/json"))
-	r.handler.MethodNotAllowed(r.handler.MethodNotAllowedHandler())
-}
-*/

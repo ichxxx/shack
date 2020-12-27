@@ -2,6 +2,7 @@ package shack
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"strings"
@@ -45,13 +46,13 @@ func(c *Context) Status(code int) *Context {
 }
 
 
-func (c *Context) Header(key string, value string) *Context {
+func(c *Context) Header(key string, value string) *Context {
 	c.Writer.Header().Set(key, value)
 	return c
 }
 
 
-func (c *Context) String(s ...string) *Context {
+func(c *Context) String(s ...string) *Context {
 	c.Header("Content-Type", "text/plain")
 	c.Writer.Write([]byte(strings.Join(s, "")))
 	return c
@@ -72,17 +73,40 @@ func (c *Context) Data(data []byte) *Context {
 }
 
 
-func (c *Context) Form(key string) string {
-	return c.Request.FormValue(key)
+func(c *Context) Body() *bodyFlow {
+	b, _ := ioutil.ReadAll(c.Request.Body)
+	return newBodyFlow(b)
 }
 
 
-func (c *Context) Query(key string) string {
-	return c.Request.URL.Query().Get(key)
+func(c *Context) Form(key string) *valueFlow {
+	return newValueFlow(c.Request.FormValue(key))
 }
 
 
-func (c *Context) Set(key string, value string) {
+func(c *Context) Forms() *formFlow {
+	err := c.Request.ParseMultipartForm(1024*1024*1024) // 10Mb
+	if err != nil {
+		return newFormFlow(nil)
+	}
+	return newFormFlow(c.Request.MultipartForm.Value)
+
+}
+
+
+func(c *Context) Query(key string) *valueFlow {
+	return newValueFlow(c.Request.URL.Query().Get(key))
+}
+
+
+func(c *Context) RawQuery() *valueFlow {
+	f := newValueFlow(c.Request.URL.RawQuery)
+	f.isRaw = true
+	return f
+}
+
+
+func(c *Context) Set(key string, value string) {
 	c.Params[key] = value
 }
 
@@ -92,7 +116,7 @@ func(c *Context) Get(key string) string {
 }
 
 
-func (c *Context) Abort() {
+func(c *Context) Abort() {
 	c.index = abortIndex
 }
 

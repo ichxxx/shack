@@ -1,4 +1,6 @@
 go.mod
 go.sum
+some_test.go
+/logs/
 /.git/
 /.idea/

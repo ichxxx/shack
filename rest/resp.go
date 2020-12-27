@@ -63,10 +63,10 @@ func(r *resp) Error(error interface{}) *resp {
 }
 
 
-func(r *resp) Data(kv ...interface{}) *resp {
-	l := len(kv)
+func(r *resp) Data(keyAndValues ...interface{}) *resp {
+	l := len(keyAndValues)
 	for i := 1; i < l; i+=2 {
-		r.D[str(kv[i-1])] = kv[i]
+		r.D[str(keyAndValues[i-1])] = keyAndValues[i]
 	}
 
 	return r
