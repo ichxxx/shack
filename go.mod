@@ -1,4 +1,4 @@
-module shack
+module github.com/ichxxx/shack
 
 go 1.15
 
