@@ -148,10 +148,14 @@ func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
 func(f *formFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
-		return errors.New("dst must be a pointer")
+		return errors.New("dst is not a pointer")
 	}
 
-	rv := p.Elem()
+	rv := reflect.Indirect(p)
+	if rv.Kind() != reflect.Struct && rv.IsNil() {
+		return errors.New("dst is nil")
+	}
+
 	switch rv.Kind() {
 	case reflect.Map:
 		kType := rv.Type().Key().Kind()
@@ -168,16 +172,19 @@ func(f *formFlow) Bind(dst interface{}, tag ...string) error {
 			}
 
 			for i := 0; i < size; i++ {
+				field := t.Field(i)
 				var _tag string
 				if len(tag) > 0 {
 					_tag = tag[0]
 				}
-				key := t.Field(i).Tag.Get(_tag)
+				key := field.Tag.Get(_tag)
 				if len(key) == 0 {
-					key = k
+					key = field.Name
 				}
-				vType := rv.FieldByName(key).Kind()
-				rv.FieldByName(key).Set(toValue(v[0], vType))
+
+				if key == k {
+					rv.Field(i).Set(toValue(v[0], rv.Field(i).Kind()))
+				}
 			}
 		}
 	}

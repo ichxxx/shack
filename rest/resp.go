@@ -16,10 +16,10 @@ var (
 )
 
 type resp struct {
-	C  int          `json:"code,omitempty"`
-	M  string       `json:"msg,omitempty"`
-	E  interface{}  `json:"error,omitempty"`
-	D  map[string]interface{}
+	C  *int        `json:"code,omitempty"`
+	M  string      `json:"msg,omitempty"`
+	E  interface{} `json:"error,omitempty"`
+	D  interface{} `json:"data,omitempty"`
 }
 
 
@@ -32,21 +32,21 @@ func Resp() *resp {
 
 
 func(r *resp) OK() *resp {
-	r.C = okC
+	r.C = &okC
 	r.M = okM
 	return r
 }
 
 
 func(r *resp) Fail() *resp {
-	r.C = failC
+	r.C = &failC
 	r.M = failM
 	return r
 }
 
 
 func(r *resp) Code(code int) *resp {
-	r.C = code
+	r.C = &code
 	return r
 }
 
@@ -65,10 +65,18 @@ func(r *resp) Error(error interface{}) *resp {
 
 func(r *resp) Data(keyAndValues ...interface{}) *resp {
 	l := len(keyAndValues)
-	for i := 1; i < l; i+=2 {
-		r.D[str(keyAndValues[i-1])] = keyAndValues[i]
+	if l <= 1 {
+		if l == 1 {
+			r.D = keyAndValues[0]
+		}
+		return r
 	}
 
+	m := make(map[string]interface{})
+	for i := 1; i < l; i+=2 {
+		m[str(keyAndValues[i-1])] = keyAndValues[i]
+	}
+	r.D = m
 	return r
 }
 
@@ -94,10 +102,10 @@ func(r *resp) DefaultFailMsg(msg string) {
 
 
 func(r *resp) reset() {
-	r.C = 0
+	r.C = nil
 	r.M = r.M[0:0]
 	r.E = nil
-	r.D = make(map[string]interface{})
+	r.D = nil
 }
 
 

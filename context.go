@@ -101,7 +101,6 @@ func(c *Context) Query(key string) *valueFlow {
 
 func(c *Context) RawQuery() *valueFlow {
 	f := newValueFlow(c.Request.URL.RawQuery)
-	f.isRaw = true
 	return f
 }
 
