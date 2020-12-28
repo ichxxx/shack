@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"shack"
+	"github.com/ichxxx/shack"
 )
 
 

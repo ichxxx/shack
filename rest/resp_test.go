@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"testing"
 
-	"shack"
+	"github.com/ichxxx/shack"
 )
 
 

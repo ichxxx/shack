@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"shack"
+	"github.com/ichxxx/shack"
 )
 
 

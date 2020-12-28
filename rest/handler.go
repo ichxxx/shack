@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"shack"
+	"github.com/ichxxx/shack"
 )
 
 // NotFoundHandler returns a handler func to respond to non existent routes with a REST compliant

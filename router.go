@@ -147,6 +147,16 @@ func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 
 	sub := NewRouter()
 	fn(sub)
+
+	// todo: 待优化
+	// todo: bug: 当 pattern 是连着的时候没有分隔，如 /api/v1
+	if pattern[1:] == "" {
+		for p, t := range sub.trie.child {
+			r.trie.child[p] = t
+		}
+		return r
+	}
+
 	if child, found := r.trie.child[pattern[1:]]; found {
 		for p, t := range sub.trie.child {
 			child.child[p] = t

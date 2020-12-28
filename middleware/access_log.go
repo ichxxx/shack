@@ -8,7 +8,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"shack"
+	"github.com/ichxxx/shack"
 )
 
 
