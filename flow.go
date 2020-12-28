@@ -53,49 +53,59 @@ func newFormFlow(value map[string][]string) *formFlow {
 }
 
 
+// Value returns the raw value of the workflow.
 func(f *valueFlow) Value() string {
 	return f.value
 }
 
 
+// Int trans the raw value to int.
 func(f *valueFlow) Int() int {
 	i, _ := strconv.Atoi(f.value)
 	return i
 }
 
 
+// Float64 trans the raw value to float64.
 func(f *valueFlow) Float64() float64 {
 	f64, _ := strconv.ParseFloat(f.value, 64)
 	return f64
 }
 
 
+// Bool trans the raw value to bool.
 func(f *valueFlow) Bool() bool {
 	b, _ := strconv.ParseBool(f.value)
 	return b
 }
 
 
+// Value returns the raw value of the workflow.
 func(f *bodyFlow) Value() []byte {
 	return f.value
 }
 
 
+// Value returns the raw value of the workflow.
 func(f *formFlow) Value() map[string][]string {
 	return f.value
 }
 
 
+// BindJson binds the passed struct pointer with the raw value parsed to json.
 func(f *valueFlow) BindJson(dst interface{}) error {
 	return json.Unmarshal([]byte(f.value), dst)
 }
 
 
+// BindJson binds the passed struct pointer with the raw value parsed to json.
 func(f *bodyFlow) BindJson(dst interface{}) error {
 	return json.Unmarshal(f.value, dst)
 }
 
 
+// Bind binds the passed struct pointer with the raw value parsed by the given tag.
+// If the tag isn't given, it will parse according to key's name.
 func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
@@ -145,6 +155,8 @@ func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
 }
 
 
+// Bind binds the passed struct pointer with the raw value parsed by the given tag.
+// If the tag isn't given, it will parse according to key's name.
 func(f *formFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {

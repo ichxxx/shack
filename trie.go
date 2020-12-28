@@ -52,6 +52,7 @@ func isValidPattern(pattern string) (isValid bool) {
 }
 
 
+// With adds one or more middlewares for an endpoint handler.
 func(t *trie) With(middleware ...HandlerFunc) {
 	// insert from head
 	t.handlers[t.m] = append(middleware, t.handlers[t.m]...)

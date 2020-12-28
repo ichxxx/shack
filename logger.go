@@ -51,10 +51,10 @@ func(l *logger) init() {
 
 	var encoder zapcore.Encoder
 	switch strings.ToLower(l.encoding) {
-	case "json":
-		encoder = zapcore.NewJSONEncoder(conf)
-	default:
+	case "console":
 		encoder = zapcore.NewConsoleEncoder(conf)
+	default:
+		encoder = zapcore.NewJSONEncoder(conf)
 	}
 
 	core := zapcore.NewCore(encoder, writeSyncer, zapcore.Level(l.level))
@@ -62,30 +62,38 @@ func(l *logger) init() {
 }
 
 
+// Enable makes logger enable to use.
 func(l *logger) Enable() {
 	Log.enable = true
 	Log.init()
 }
 
 
+// Level sets the level of logger.
+// The default level is `Info`.
 func(l *logger) Level(level int8) *logger {
 	l.level = level
 	return l
 }
 
 
+// Level sets the encoding ( `json` or `console` ) of logger.
+// The default encoding is `json`.
 func(l *logger) Encoding(encoding string) *logger {
 	l.encoding = encoding
 	return l
 }
 
 
+// Output sets the output paths of logger.
+// The default output path is `./logs`.
 func(l *logger) Output(paths ...string) *logger {
 	l.outputPaths = append(l.outputPaths, paths...)
 	return l
 }
 
 
+// Dev enable the development mode of logger.
 func(l *logger) Dev() *logger {
 	l.development = true
 	return l

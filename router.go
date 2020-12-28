@@ -75,46 +75,48 @@ func(r *Router) handler(ctx *Context) {
 }
 
 
-func(r *Router) GET(pattern string, handler func(*Context)) *trie {
+func(r *Router) GET(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_GET, pattern, handler)
 }
 
 
-func(r *Router) POST(pattern string, handler func(*Context)) *trie {
+func(r *Router) POST(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_POST, pattern, handler)
 }
 
 
-func(r *Router) DELETE(pattern string, handler func(*Context)) *trie {
+func(r *Router) DELETE(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_DELETE, pattern, handler)
 }
 
 
-func(r *Router) PUT(pattern string, handler func(*Context)) *trie {
+func(r *Router) PUT(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_PUT, pattern, handler)
 }
 
 
-func(r *Router) PATCH(pattern string, handler func(*Context)) *trie {
+func(r *Router) PATCH(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_PATCH, pattern, handler)
 }
 
 
-func(r *Router) OPTIONS(pattern string, handler func(*Context)) *trie {
+func(r *Router) OPTIONS(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_OPTIONS, pattern, handler)
 }
 
 
-func(r *Router) HEAD(pattern string, handler func(*Context)) *trie {
+func(r *Router) HEAD(pattern string, handler HandlerFunc) *trie {
 	return r.trie.insert(_HEAD, pattern, handler)
 }
 
 
+// Use appends one or more middlewares onto the router.
 func(r *Router) Use(middlewares ...HandlerFunc) {
 	r.groupMiddlewares = append(r.groupMiddlewares, middlewares...)
 }
 
 
+// Mount attaches another router along a `pattern` string.
 func(r *Router) Mount(pattern string, router *Router) {
 	if !isValidPattern(pattern) {
 		panic(fmt.Sprintf("shack: pattern %s is not valid", pattern))
@@ -133,6 +135,7 @@ func(r *Router) Mount(pattern string, router *Router) {
 }
 
 
+// Group adds a sub-Router to the group along a `pattern` string.
 func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 	if !isValidPattern(pattern) {
 		panic(fmt.Sprintf("shack: pattern %s is not valid", pattern))
@@ -165,12 +168,13 @@ func(r *Router) Handle(pattern string, fn HandlerFunc) {
 
 // NotFound defines a handler to respond whenever a route could
 // not be found.
-func(r *Router) NotFound(fn HandlerFunc) {
-	r.notFountHandler = fn
+func(r *Router) NotFound(handler HandlerFunc) {
+	r.notFountHandler = handler
 }
+
 
 // MethodNotAllowed defines a handler to respond whenever a method is
 // not allowed.
-func(r *Router) MethodNotAllowed(fn HandlerFunc) {
-	r.methodNotAllowedHandler = fn
+func(r *Router) MethodNotAllowed(handler HandlerFunc) {
+	r.methodNotAllowedHandler = handler
 }

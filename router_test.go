@@ -44,7 +44,7 @@ func onlyForV2() HandlerFunc {
 func TestRouterGroup(t *testing.T) {
 	r := NewRouter()
 
-	r.GET("/v1", func(context *Context){}).With(onlyForV1())
+	r.GET("/v1", func(ctx *Context){}).With(onlyForV1())
 	r.Group("/v1", func(r *Router) {
 		r.GET("/test", func(ctx *Context){})
 	})
