@@ -18,15 +18,15 @@ type trie struct {
 	isParam    bool
 	isPath     bool
 	p          string
-	child      map[string]*trie
-	m          string
+	childs     map[string]*trie
+	m          string // m means the passed method
 }
 
 
 func newTrie() *trie {
 	return &trie{
 		handlers: make(map[string][]HandlerFunc, 7),
-		child: make(map[string]*trie),
+		childs: make(map[string]*trie),
 	}
 }
 
@@ -75,11 +75,11 @@ func(t *trie) insert(method, path string, handler HandlerFunc) *trie {
 			segment = _WILD
 		}
 
-		if _, ok := t.child[segment]; !ok {
-			t.child[segment] = newTrie()
+		if _, ok := t.childs[segment]; !ok {
+			t.childs[segment] = newTrie()
 		}
 
-		t = t.child[segment]
+		t = t.childs[segment]
 		switch p[0] {
 		case _PARAM:
 			t.isParam = true
@@ -167,9 +167,9 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 
 
 func(t *trie) next(segment string) (next *trie) {
-	next = t.child[segment]
+	next = t.childs[segment]
 	if next == nil {
-		next = t.child[_WILD]
+		next = t.childs[_WILD]
 	}
 	return
 }
@@ -181,8 +181,8 @@ func(t *trie) print() {
 
 
 func(t *trie) dfs(count int) {
-	for key, trie := range t.child {
+	for key, child := range t.childs {
 		fmt.Println(strings.Repeat("-", count), key)
-		trie.dfs(count+1)
+		child.dfs(count+1)
 	}
 }

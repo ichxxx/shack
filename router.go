@@ -46,9 +46,16 @@ func(r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
 	middlewares = append(middlewares, r.groupMiddlewares...)
+	if path == "/" {
+		return
+	}
+
 	for pattern, router := range r.sub {
-		if strings.HasPrefix(path, pattern) {
-			middlewares = append(middlewares, getGroupMiddlewares(router, strings.TrimPrefix(path, pattern))...)
+		if path = path[1:]; strings.HasPrefix(path, pattern) {
+			nextPath := strings.TrimPrefix(path, pattern)
+			if nextPath != "" {
+				middlewares = append(middlewares, getGroupMiddlewares(router, nextPath)...)
+			}
 		}
 	}
 	return
@@ -130,8 +137,9 @@ func(r *Router) Mount(pattern string, router *Router) {
 		panic(fmt.Sprintf("shack: pattern %s to mount is already exist", pattern))
 	}
 
+	// todo: should use mergeSubRouter and mergeSubTrie ?
 	r.sub[pattern] = router
-	r.trie.child[pattern[1:]] = router.trie
+	r.trie.childs[pattern[1:]] = router.trie
 }
 
 
@@ -145,34 +153,38 @@ func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 		panic(fmt.Sprintf("shack: fn is nil in grouping %s", pattern))
 	}
 
+	root := r
 	sub := NewRouter()
 	fn(sub)
 
-	// todo: 待优化
-	// todo: bug: 当 pattern 是连着的时候没有分隔，如 /api/v1
-	if pattern[1:] == "" {
-		for p, t := range sub.trie.child {
-			r.trie.child[p] = t
+	if pattern == "/" {
+		for method, handler := range sub.trie.handlers {
+			root.trie.handlers[method] = handler
+		}
+
+		for key, ss := range sub.sub {
+			mergeSubRouter(root, ss, key)
+		}
+		for key, st := range sub.trie.childs {
+			mergeSubTrie(root.trie, st, key)
 		}
 		return r
 	}
 
-	if child, found := r.trie.child[pattern[1:]]; found {
-		for p, t := range sub.trie.child {
-			child.child[p] = t
+	segments := strings.Split(pattern, "/")
+	segmentsLen := len(segments)
+	for _, segment := range segments[1:segmentsLen-1] {
+		if root.sub[segment] == nil {
+			next := NewRouter()
+			root.sub[segment] = next
+			root.trie.childs[segment] = next.trie
 		}
-		return r
+		root = root.sub[segment]
 	}
 
-	r.sub[pattern] = sub
-	r.trie.child[pattern[1:]] = sub.trie
+	mergeSubRouter(root, sub, segments[segmentsLen-1])
+	mergeSubTrie(root.trie, sub.trie, segments[segmentsLen-1])
 	return r
-}
-
-
-// Handle adds routes for `pattern` that matches all HTTP methods.
-func(r *Router) Handle(pattern string, fn HandlerFunc) {
-	r.trie.insert(_ALL, pattern, fn)
 }
 
 
@@ -187,4 +199,35 @@ func(r *Router) NotFound(handler HandlerFunc) {
 // not allowed.
 func(r *Router) MethodNotAllowed(handler HandlerFunc) {
 	r.methodNotAllowedHandler = handler
+}
+
+
+// Handle adds routes for `pattern` that matches all HTTP methods.
+func(r *Router) Handle(pattern string, fn HandlerFunc) {
+	r.trie.insert(_ALL, pattern, fn)
+}
+
+
+func mergeSubRouter(root, sub *Router, pattern string) {
+	if root.sub[pattern] != nil {
+		root.sub[pattern].groupMiddlewares = append(root.sub[pattern].groupMiddlewares, sub.groupMiddlewares...)
+		for key, r := range sub.sub {
+			mergeSubRouter(root.sub[pattern], r, key)
+		}
+		return
+	}
+
+	root.sub[pattern] = sub
+}
+
+
+func mergeSubTrie(root, sub *trie, pattern string) {
+	if next, found := root.childs[pattern]; found {
+		for key, t := range sub.childs {
+			mergeSubTrie(next, t, key)
+		}
+		return
+	}
+
+	root.childs[pattern] = sub
 }

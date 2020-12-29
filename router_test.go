@@ -42,21 +42,26 @@ func onlyForV2() HandlerFunc {
 
 
 func TestRouterGroup(t *testing.T) {
+	r2 := func(r *Router) {
+		r.GET("/", func(ctx *Context){})
+		r.GET("/v1", func(ctx *Context){}).With(onlyForV1())
+		r.Group("/v1", func(r *Router) {
+			r.GET("/test", func(ctx *Context){})
+		})
+		r.Group("/v2", func(r *Router) {
+			r.Use(onlyForV2())
+			r.GET("/test", func(ctx *Context){})
+		})
+	}
 	r := NewRouter()
-
-	r.GET("/v1", func(ctx *Context){}).With(onlyForV1())
-	r.Group("/v1", func(r *Router) {
-		r.GET("/test", func(ctx *Context){})
-	})
-	r.Group("/v2", func(r *Router) {
-		r.GET("/test", func(ctx *Context){})
-		r.Use(onlyForV2())
-	})
-	r.Use(forAll())
+	r.Group("/", r2).Use(forAll())
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
 
+	if _, body := request(t, ts, "GET", "/", nil); body != "for all" {
+		t.Fatalf(body)
+	}
 	if _, body := request(t, ts, "GET", "/v1", nil); body != "for all and only for v1" {
 		t.Fatalf(body)
 	}
