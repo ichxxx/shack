@@ -23,6 +23,12 @@ type resp struct {
 }
 
 
+// R is a shortcut of Resp
+func R() *resp {
+	return Resp()
+}
+
+
 func Resp() *resp {
 	r := respPool.Get().(*resp)
 	r.reset()

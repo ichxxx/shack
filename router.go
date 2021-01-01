@@ -8,13 +8,13 @@ import (
 
 
 const (
-	_GET     = "GET"
-	_POST    = "POST"
-	_DELETE  = "DELETE"
-	_PUT     = "PUT"
-	_PATCH   = "PATCH"
-	_OPTIONS = "OPTIONS"
-	_HEAD    = "HEAD"
+	_GET     = http.MethodGet
+	_POST    = http.MethodPost
+	_DELETE  = http.MethodDelete
+	_PUT     = http.MethodPut
+	_PATCH   = http.MethodPatch
+	_OPTIONS = http.MethodOptions
+	_HEAD    = http.MethodHead
 	_ALL     = "ALL"
 )
 
@@ -203,9 +203,15 @@ func(r *Router) MethodNotAllowed(handler HandlerFunc) {
 }
 
 
-// Handle adds routes for `pattern` that matches all HTTP methods.
-func(r *Router) Handle(pattern string, fn HandlerFunc) {
+// HandleAll adds routes for `pattern` that matches all HTTP methods.
+func(r *Router) HandleAll(pattern string, fn HandlerFunc) {
 	r.trie.insert(_ALL, pattern, fn)
+}
+
+
+// Handle adds routes for `pattern` by specify a method.
+func(r *Router) Handle(method, pattern string, fn HandlerFunc) {
+	r.trie.insert(method, pattern, fn)
 }
 
 

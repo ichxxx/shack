@@ -14,6 +14,7 @@ func ListenAndServe(addr string, router *Router) {
 	return
 }
 
+
 // Logger returns a logger by specify a name
 func Logger(name string) *logger {
 	Log.name = name
