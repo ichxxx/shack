@@ -50,8 +50,9 @@ func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
 		return
 	}
 
+	path = path[1:]
 	for pattern, router := range r.sub {
-		if path = path[1:]; strings.HasPrefix(path, pattern) {
+		if strings.HasPrefix(path, pattern) {
 			nextPath := strings.TrimPrefix(path, pattern)
 			if nextPath != "" {
 				middlewares = append(middlewares, getGroupMiddlewares(router, nextPath)...)
