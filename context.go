@@ -105,8 +105,13 @@ func(c *Context) Forms() *formFlow {
 
 
 // Query returns a workflow of the keyed url query value.
-func(c *Context) Query(key string) *valueFlow {
-	return newValueFlow(c.Request.URL.Query().Get(key))
+func(c *Context) Query(key string, defaultValue ...string) *valueFlow {
+	value := c.Request.URL.Query().Get(key)
+	if value == "" && len(defaultValue) > 0 {
+		return newValueFlow(defaultValue[0])
+	}
+
+	return newValueFlow(value)
 }
 
 
