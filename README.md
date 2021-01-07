@@ -22,8 +22,10 @@ func main() {
 	r.GET("/example", func(ctx *shack.Context) {
 		ctx.JSON(rest.R().OK())
 	}).With(middleware.Recovery())
-	
-	shack.ListenAndServe(":8080", r)
+
+	shack.Run(":8080", r)
+	// or
+	// http.ListenAndServe(":8080", r)
 }
 ```
 
@@ -40,7 +42,7 @@ func main() {
 		))
 	})
 
-	shack.ListenAndServe(":8080", r)
+	shack.Run(":8080", r)
 }
 ```
 
@@ -54,7 +56,7 @@ func main() {
 		ctx.String(strconv.Itoa(foo), bar)
 	})
 
-	shack.ListenAndServe(":8080", r)
+	shack.Run(":8080", r)
 }
 ```
 
@@ -80,7 +82,7 @@ func main() {
 		))
 	})
 
-	shack.ListenAndServe(":8080", r)
+	shack.Run(":8080", r)
 }
 ```
 
@@ -95,7 +97,7 @@ func main() {
 		r.GET("/login", loginHandler)
 	})
 	
-	shack.ListenAndServe(":8080", r)
+	shack.Run(":8080", r)
 }
 ```
 
@@ -105,7 +107,7 @@ func main() {
 	r := shack.NewRouter()
 	r.Mount("/api", apiRouter())
 	
-	shack.ListenAndServe(":8080", r)
+	shack.Run(":8080", r)
 }
 
 func apiRouter() *shack.Router {

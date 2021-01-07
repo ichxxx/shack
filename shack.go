@@ -6,7 +6,7 @@ import (
 )
 
 
-func ListenAndServe(addr string, router *Router) {
+func Run(addr string, router *Router) {
 	err := http.ListenAndServe(addr, router)
 	if err != nil {
 		panic(fmt.Sprint("shack: ", err))
