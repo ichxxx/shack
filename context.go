@@ -116,8 +116,8 @@ func(c *Context) Query(key string, defaultValue ...string) *valueFlow {
 
 
 // RawQuery returns a workflow of the url query values, without '?'.
-func(c *Context) RawQuery() *valueFlow {
-	f := newValueFlow(c.Request.URL.RawQuery)
+func(c *Context) RawQuery() *rawFlow {
+	f := newRawFlow(c.Request.URL.RawQuery)
 	return f
 }
 

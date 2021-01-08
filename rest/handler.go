@@ -8,6 +8,7 @@ import (
 // error message
 func NotFoundHandler() shack.HandlerFunc {
 	return func(ctx *shack.Context) {
+		ctx.Header("Content-Type", "application/json")
 		ctx.JSON(Resp().Error("resource not found"))
 	}
 }
@@ -16,6 +17,7 @@ func NotFoundHandler() shack.HandlerFunc {
 // REST compliant error message
 func MethodNotAllowedHandler() shack.HandlerFunc {
 	return func(ctx *shack.Context) {
+		ctx.Header("Content-Type", "application/json")
 		ctx.JSON(Resp().Error("method not allowed"))
 	}
 }

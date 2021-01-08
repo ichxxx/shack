@@ -70,6 +70,7 @@ func(r *Router) handler(ctx *Context) {
 		ctx.handlers = append(ctx.handlers, handlers...)
 		ctx.Next()
 	} else if ok {
+		// todo: 如果是模糊节点，且没有handler，会通过判断，待修复
 		ctx.Status(http.StatusMethodNotAllowed)
 		if r.methodNotAllowedHandler != nil {
 			r.methodNotAllowedHandler(ctx)
@@ -84,37 +85,37 @@ func(r *Router) handler(ctx *Context) {
 
 
 func(r *Router) GET(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_GET, pattern, handler)
+	return r.trie.insert(pattern, handler, _GET)
 }
 
 
 func(r *Router) POST(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_POST, pattern, handler)
+	return r.trie.insert(pattern, handler, _POST)
 }
 
 
 func(r *Router) DELETE(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_DELETE, pattern, handler)
+	return r.trie.insert(pattern, handler, _DELETE)
 }
 
 
 func(r *Router) PUT(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_PUT, pattern, handler)
+	return r.trie.insert(pattern, handler, _PUT)
 }
 
 
 func(r *Router) PATCH(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_PATCH, pattern, handler)
+	return r.trie.insert(pattern, handler, _PATCH)
 }
 
 
 func(r *Router) OPTIONS(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_OPTIONS, pattern, handler)
+	return r.trie.insert(pattern, handler, _OPTIONS)
 }
 
 
 func(r *Router) HEAD(pattern string, handler HandlerFunc) *trie {
-	return r.trie.insert(_HEAD, pattern, handler)
+	return r.trie.insert(pattern, handler, _HEAD)
 }
 
 
@@ -203,15 +204,14 @@ func(r *Router) MethodNotAllowed(handler HandlerFunc) {
 }
 
 
-// HandleAll adds routes for `pattern` that matches all HTTP methods.
-func(r *Router) HandleAll(pattern string, fn HandlerFunc) {
-	r.trie.insert(_ALL, pattern, fn)
-}
-
-
-// Handle adds routes for `pattern` by specify a method.
-func(r *Router) Handle(method, pattern string, fn HandlerFunc) {
-	r.trie.insert(method, pattern, fn)
+// Handle adds routes for `pattern` by specify methods.
+// If method isn't given, it will handler all methods.
+func(r *Router) Handle(pattern string, fn HandlerFunc, methods ...string) {
+	if len(methods) == 0 {
+		r.trie.insert(pattern, fn, _ALL)
+		return
+	}
+	r.trie.insert(pattern, fn, methods...)
 }
 
 

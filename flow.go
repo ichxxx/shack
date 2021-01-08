@@ -3,6 +3,7 @@ package shack
 import (
 	"encoding/json"
 	"errors"
+	"net/url"
 	"reflect"
 	"strconv"
 	"strings"
@@ -10,10 +11,15 @@ import (
 )
 
 var (
+	rFlowPool = &sync.Pool{New: func() interface{}{return new(rawFlow)}}
 	vFlowPool = &sync.Pool{New: func() interface{}{return new(valueFlow)}}
 	bFlowPool = &sync.Pool{New: func() interface{}{return new(bodyFlow)}}
 	fFlowPool = &sync.Pool{New: func() interface{}{return new(formFlow)}}
 )
+
+type rawFlow struct {
+	value string
+}
 
 type valueFlow struct {
 	value string
@@ -25,6 +31,15 @@ type bodyFlow struct {
 
 type formFlow struct {
 	value map[string][]string
+}
+
+
+func newRawFlow(value string) *rawFlow {
+	f := rFlowPool.Get().(*rawFlow)
+	rFlowPool.Put(f)
+	f.reset()
+	f.value, _ = url.QueryUnescape(value)
+	return f
 }
 
 
@@ -50,6 +65,12 @@ func newFormFlow(value map[string][]string) *formFlow {
 	fFlowPool.Put(f)
 	f.value = value
 	return f
+}
+
+
+// Value returns the raw value of the workflow.
+func(f *rawFlow) Value() string {
+	return f.value
 }
 
 
@@ -106,7 +127,7 @@ func(f *bodyFlow) BindJson(dst interface{}) error {
 
 // Bind binds the passed struct pointer with the raw value parsed by the given tag.
 // If the tag isn't given, it will parse according to key's name.
-func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
+func(f *rawFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
 		return errors.New("dst must be a pointer")
@@ -121,7 +142,44 @@ func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
 		}
 	}
 
-	rv := p.Elem()
+	return mapTo(p.Elem(), m, tag...)
+}
+
+
+// Bind binds the passed struct pointer with the raw value parsed by the given tag.
+// If the tag isn't given, it will parse according to key's name.
+func(f *formFlow) Bind(dst interface{}, tag ...string) error {
+	p := reflect.ValueOf(dst)
+	if p.Kind() != reflect.Ptr || p.IsNil() {
+		return errors.New("dst is not a pointer")
+	}
+
+	m := map[string]string{}
+	for k, v := range f.value {
+		m[k] = v[0]
+	}
+
+	return mapTo(reflect.Indirect(p), m, tag...)
+}
+
+
+func(f *rawFlow) reset() {}
+
+
+func(f *valueFlow) reset() {}
+
+
+func(f *bodyFlow) reset() {}
+
+
+func(f *formFlow) reset() {}
+
+
+func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
+	if rv.Kind() != reflect.Struct && rv.IsNil() {
+		return errors.New("dst is nil")
+	}
+
 	switch rv.Kind() {
 	case reflect.Map:
 		kType := rv.Type().Key().Kind()
@@ -138,53 +196,14 @@ func(f *valueFlow) Bind(dst interface{}, tag ...string) error {
 			}
 
 			for i := 0; i < size; i++ {
-				var _tag string
-				if len(tag) > 0 {
-					_tag = tag[0]
-				}
-				key := t.Field(i).Tag.Get(_tag)
-				if len(key) == 0 {
-					key = k
-				}
-				vType := rv.FieldByName(key).Kind()
-				rv.FieldByName(key).Set(toValue(v, vType))
-			}
-		}
-	}
-	return nil
-}
-
-
-// Bind binds the passed struct pointer with the raw value parsed by the given tag.
-// If the tag isn't given, it will parse according to key's name.
-func(f *formFlow) Bind(dst interface{}, tag ...string) error {
-	p := reflect.ValueOf(dst)
-	if p.Kind() != reflect.Ptr || p.IsNil() {
-		return errors.New("dst is not a pointer")
-	}
-
-	rv := reflect.Indirect(p)
-	if rv.Kind() != reflect.Struct && rv.IsNil() {
-		return errors.New("dst is nil")
-	}
-
-	switch rv.Kind() {
-	case reflect.Map:
-		kType := rv.Type().Key().Kind()
-		vType := rv.Type().Elem().Kind()
-		for k, v := range f.value {
-			rv.SetMapIndex(toValue(k, kType), toValue(v[0], vType))
-		}
-	case reflect.Struct:
-		for k, v := range f.value {
-			t := rv.Type()
-			size := rv.NumField()
-			if size == 0 {
-				return errors.New("dst struct doesn't have any fields")
-			}
-
-			for i := 0; i < size; i++ {
 				field := t.Field(i)
+				if field.Type.Kind() == reflect.Struct {
+					err := mapTo(reflect.ValueOf(field.Type), m, tag...)
+					if err != nil {
+						return err
+					}
+				}
+
 				var _tag string
 				if len(tag) > 0 {
 					_tag = tag[0]
@@ -194,23 +213,16 @@ func(f *formFlow) Bind(dst interface{}, tag ...string) error {
 					key = field.Name
 				}
 
+				key = strings.TrimSuffix(key,",omitempty")
 				if key == k {
-					rv.Field(i).Set(toValue(v[0], rv.Field(i).Kind()))
+					rv.Field(i).Set(toValue(v, rv.Field(i).Kind()))
 				}
 			}
 		}
 	}
+
 	return nil
 }
-
-
-func(f *valueFlow) reset() {}
-
-
-func(f *bodyFlow) reset() {}
-
-
-func(f *formFlow) reset() {}
 
 
 func toValue(src string, dType reflect.Kind) reflect.Value {
@@ -259,5 +271,6 @@ func toValue(src string, dType reflect.Kind) reflect.Value {
 		return reflect.ValueOf(i)
 
 	}
+
 	return reflect.ValueOf(src)
 }

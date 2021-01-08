@@ -19,7 +19,7 @@ type trie struct {
 	isPath     bool
 	p          string
 	childs     map[string]*trie
-	m          string // m means the passed method
+	m          []string // m means the passed methods
 }
 
 
@@ -55,11 +55,13 @@ func isValidPattern(pattern string) (isValid bool) {
 // With adds one or more middlewares for an endpoint handler.
 func(t *trie) With(middleware ...HandlerFunc) {
 	// insert from head
-	t.handlers[t.m] = append(middleware, t.handlers[t.m]...)
+	for _, method := range t.m {
+		t.handlers[method] = append(middleware, t.handlers[method]...)
+	}
 }
 
 
-func(t *trie) insert(method, path string, handler HandlerFunc) *trie {
+func(t *trie) insert(path string, handler HandlerFunc, methods ...string) *trie {
 	if !isValidPath(path) {
 		panic(fmt.Sprintf("shack: path '%s' is not valid", path))
 	}
@@ -94,18 +96,20 @@ func(t *trie) insert(method, path string, handler HandlerFunc) *trie {
 	}
 
 	if handler != nil {
-		switch method {
-		case _ALL:
-			if len(t.handlers) > 0 {
-				panic("shack: can't route method 'ALL', method duplicated")
+		for _, method := range methods {
+			switch method {
+			case _ALL:
+				if len(t.handlers) > 0 {
+					panic("shack: can't route method 'ALL', method duplicated")
+				}
+			default:
+				if t.handlers[_ALL] != nil || t.handlers[method] != nil {
+					panic(fmt.Sprintf("shack: can't route method '%s', method duplicated", method))
+				}
 			}
-		default:
-			if t.handlers[_ALL] != nil || t.handlers[method] != nil {
-				panic(fmt.Sprintf("shack: can't route method '%s', method duplicated", method))
-			}
+			t.m = methods
+			t.handlers[method] = append(t.handlers[method], handler)
 		}
-		t.m = method
-		t.handlers[method] = append(t.handlers[method], handler)
 	}
 
 	return t

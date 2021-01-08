@@ -48,12 +48,25 @@ func main() {
 
 ### Querystring parameters
 ```go
+type query struct {
+	Foo int    `json:"foo"`
+	Bar string `json:"bar"`
+}
+
 func main() {
 	r := shack.NewRouter()
 	r.GET("/example", func(ctx *shack.Context) {
 		foo := ctx.Query("foo").Int()
 		bar := ctx.Query("bar", "defaultBar").Value()
-		ctx.String(strconv.Itoa(foo), bar)
+		
+        query := &query{}
+        ctx.RawQuery().Bind(query)
+        
+        ctx.JSON(rest.R().Data(
+            "foo", foo,
+            "bar", bar,
+            "query", query,
+        ))
 	})
 
 	shack.Run(":8080", r)
@@ -122,7 +135,7 @@ func main() {
 	shack.Logger("example").
 		Level(shack.ErrorLevel).
 		Encoding("json").
-		Output("/logs").
+		Output("./logs").
 		Enable()
 	
 	shack.Log.Error("some error",

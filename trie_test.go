@@ -47,7 +47,7 @@ func TestTrie(t *testing.T) {
 
 	trie := newTrie()
 	for _, input := range inputs {
-		trie.insert(input.method, input.pattern, input.handler)
+		trie.insert(input.pattern, input.handler, input.method)
 	}
 
 	for i, test := range tests {
