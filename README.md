@@ -60,7 +60,7 @@ func main() {
 		bar := ctx.Query("bar", "defaultBar").Value()
 		
         query := &query{}
-        ctx.RawQuery().Bind(query)
+        ctx.RawQuery().Bind(query, "json")
         
         ctx.JSON(rest.R().Data(
             "foo", foo,
@@ -107,7 +107,8 @@ func main() {
 	r.GET("/example", exampleHandler).With(middleware.AccessLog())
 	r.Group("/api", func(r *shack.Router) {
 		r.Use(onlyForApi)
-		r.GET("/login", loginHandler)
+        r.Handle("/article", articleHandler)
+		r.Handle("/user", userHandler, http.MethodGet, http.MethodPost)
 	})
 	
 	shack.Run(":8080", r)
