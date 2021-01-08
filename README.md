@@ -59,14 +59,14 @@ func main() {
 		foo := ctx.Query("foo").Int()
 		bar := ctx.Query("bar", "defaultBar").Value()
 		
-        query := &query{}
-        ctx.RawQuery().Bind(query, "json")
+		query := &query{}
+		ctx.RawQuery().Bind(query, "json")
         
-        ctx.JSON(rest.R().Data(
-            "foo", foo,
-            "bar", bar,
-            "query", query,
-        ))
+		ctx.JSON(rest.R().Data(
+			"foo", foo,
+			"bar", bar,
+			"query", query,
+		))
 	})
 
 	shack.Run(":8080", r)
@@ -85,10 +85,10 @@ func main() {
 	r := shack.NewRouter()
 	r.POST("/example", func(ctx *shack.Context) {
 		data := ctx.Form("data").Value()
-		
+        
 		forms := &forms{}
 		ctx.Forms().Bind(forms, "json")
-		
+        
 		ctx.JSON(rest.R().Data(
 			"data", data,
 			"forms", forms,
@@ -107,7 +107,7 @@ func main() {
 	r.GET("/example", exampleHandler).With(middleware.AccessLog())
 	r.Group("/api", func(r *shack.Router) {
 		r.Use(onlyForApi)
-        r.Handle("/article", articleHandler)
+		r.Handle("/article", articleHandler)
 		r.Handle("/user", userHandler, http.MethodGet, http.MethodPost)
 	})
 	
