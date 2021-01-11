@@ -24,7 +24,7 @@ type logger struct {
 	name        string
 	level       int8
 	encoding    string
-	outputPaths []string
+	outputPath  string
 	development bool
 }
 
@@ -33,13 +33,14 @@ var Log = &logger{}
 
 func(l *logger) init() {
 	var writeSyncer zapcore.WriteSyncer
-	for _, path := range l.outputPaths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			os.Mkdir(path, os.ModePerm)
-		}
-		f, _ := os.OpenFile(fmt.Sprintf("%s/%s.log", path, l.name), os.O_APPEND|os.O_RDWR|os.O_CREATE, os.ModePerm)
-		writeSyncer = zapcore.AddSync(f)
+	if l.outputPath == "" {
+		l.outputPath = "./logs"
 	}
+	if _, err := os.Stat(l.outputPath); os.IsNotExist(err) {
+		os.Mkdir(l.outputPath, os.ModePerm)
+	}
+	f, _ := os.OpenFile(fmt.Sprintf("%s/%s.log", l.outputPath, l.name), os.O_APPEND|os.O_RDWR|os.O_CREATE, os.ModePerm)
+	writeSyncer = zapcore.AddSync(f)
 
 	var conf zapcore.EncoderConfig
 	if l.development {
@@ -85,10 +86,10 @@ func(l *logger) Encoding(encoding string) *logger {
 }
 
 
-// Output sets the output paths of logger.
+// Output sets the output path of logger.
 // The default output path is `./logs`.
-func(l *logger) Output(paths ...string) *logger {
-	l.outputPaths = append(l.outputPaths, paths...)
+func(l *logger) Output(path string) *logger {
+	l.outputPath = path
 	return l
 }
 
