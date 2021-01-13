@@ -123,7 +123,7 @@ func(c *Context) RawQuery() *rawFlow {
 
 
 // Set sets a key/value pair exclusively for this context.
-func(c *Context) Set(key string, value string) {
+func(c *Context) Set(key string, value interface{}) {
 	c.Bucket[key] = value
 }
 
