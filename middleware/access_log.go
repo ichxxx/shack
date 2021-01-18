@@ -36,15 +36,18 @@ func AccessLog(path ...string) shack.HandlerFunc {
 
 	return func(ctx *shack.Context) {
 		start := time.Now()
+
+		ctx.Next()
+
 		duration := time.Since(start)
 		durationMs := duration.Nanoseconds() / (1000 * 1000)
 
 		accessLogger.Info("",
-			zap.String("uri", ctx.Path),
-			zap.String("request_method", ctx.Method),
-			zap.String("query_string", ctx.Request.URL.RawQuery),
-			zap.Int("status", ctx.StatusCode),
 			zap.Int64("response_time", durationMs),
+			zap.String("uri", ctx.Path),
+			zap.String("method", ctx.Method),
+			zap.String("query", ctx.Request.URL.RawQuery),
+			zap.Int("code", ctx.StatusCode),
 			zap.String("remote_address", ctx.Request.RemoteAddr),
 			zap.String("protocol", ctx.Request.Proto),
 			zap.String("server_name", ctx.Request.URL.Host),
