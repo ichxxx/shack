@@ -6,6 +6,7 @@ import (
 	"math"
 	"net/http"
 	"strings"
+	"sync"
 )
 
 type Context struct {
@@ -16,13 +17,12 @@ type Context struct {
 	Path       string
 	Method     string
 	Params     map[string]string
-	Bucket     map[string]interface{}
+	Bucket     *sync.Map
 	handlers   []HandlerFunc
 	index      int8
 }
 
 const abortIndex int8 = math.MaxInt8 / 2
-
 
 func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
@@ -30,7 +30,6 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 		Request: r,
 		Path   : r.URL.Path,
 		Method : r.Method,
-		Bucket : make(map[string]interface{}),
 		index  : -1,
 	}
 }
@@ -122,15 +121,32 @@ func(c *Context) RawQuery() *rawFlow {
 }
 
 
-// Set sets a key/value pair exclusively for this context.
-func(c *Context) Set(key string, value interface{}) {
-	c.Bucket[key] = value
+// Set store a key/value pair in the context bucket.
+func(c *Context) Set(key interface{}, value interface{}) {
+	if c.Bucket == nil {
+		c.Bucket = &sync.Map{}
+	}
+	c.Bucket.Store(key, value)
 }
 
 
-// Get returns the value for the given key.
-func(c *Context) Get(key string) interface{} {
-	return c.Bucket[key]
+// Get returns the value for the given key in the context bucket.
+func(c *Context) Get(key interface{}) (value interface{}) {
+	if c.Bucket == nil {
+		return
+	}
+	value, _ = c.Bucket.Load(key)
+	return
+}
+
+
+// Delete removes the value for the given key in the context bucket.
+func(c *Context) Delete(key interface{}) {
+	if c.Bucket == nil {
+		return
+	}
+	c.Bucket.Delete(key)
+	return
 }
 
 
