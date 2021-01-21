@@ -24,6 +24,7 @@ type Context struct {
 
 const abortIndex int8 = math.MaxInt8 / 2
 
+
 func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Writer : w,
@@ -121,7 +122,7 @@ func(c *Context) RawQuery() *rawFlow {
 }
 
 
-// Set store a key/value pair in the context bucket.
+// Set stores a key/value pair in the context bucket.
 func(c *Context) Set(key interface{}, value interface{}) {
 	if c.Bucket == nil {
 		c.Bucket = &sync.Map{}
@@ -131,12 +132,11 @@ func(c *Context) Set(key interface{}, value interface{}) {
 
 
 // Get returns the value for the given key in the context bucket.
-func(c *Context) Get(key interface{}) (value interface{}) {
+func(c *Context) Get(key interface{}) (value interface{}, ok bool) {
 	if c.Bucket == nil {
 		return
 	}
-	value, _ = c.Bucket.Load(key)
-	return
+	return c.Bucket.Load(key)
 }
 
 

@@ -195,6 +195,7 @@ func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 				return errors.New("dst struct doesn't have any fields")
 			}
 
+			fieldLoop:
 			for i := 0; i < size; i++ {
 				field := t.Field(i)
 				if field.Type.Kind() == reflect.Struct {
@@ -210,10 +211,17 @@ func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 				}
 				key := field.Tag.Get(_tag)
 				if len(key) == 0 {
-					key = field.Name
+					if field.Name == k {
+						rv.Field(i).Set(toValue(v, rv.Field(i).Kind()))
+					}
+					continue fieldLoop
 				}
 
-				key = strings.TrimSuffix(key,",omitempty")
+				if key == "-" {
+					continue fieldLoop
+				}
+
+				key = strings.TrimSuffix(key, ",omitempty")
 				if key == k {
 					rv.Field(i).Set(toValue(v, rv.Field(i).Kind()))
 				}

@@ -36,8 +36,8 @@ func TestFormFlowBind(t *testing.T) {
 
 func TestFormFlowBindWithTag(t *testing.T) {
 	inputs := []map[string][]string{
-		{"foo":{"123"}, "Foo":{"foo"}},
-		{"Baz":{"abc"}, "bar":{"123"}},
+		{"foo":{"123"}, "Foo":{"foo"}, "Nil": {"nil"}},
+		{"Baz":{"abc"}, "bar":{"123"}, "Nil": {"nil"}},
 	}
 
 	type tmpStruct struct {
@@ -45,6 +45,7 @@ func TestFormFlowBindWithTag(t *testing.T) {
 		Bar string
 		Baz int     `form:"foo"`
 		Qux float64 `json:"bar"`
+		Nil string  `json:"-" form:"-"`
 	}
 
 	tests := []struct{
@@ -52,8 +53,8 @@ func TestFormFlowBindWithTag(t *testing.T) {
 		tag string
 		result interface{}
 	}{
-		{&tmpStruct{},"form",&tmpStruct{Foo: "foo", Baz: 123}},
-		{&tmpStruct{},"json",&tmpStruct{Baz: 0, Qux: 123}},
+		{&tmpStruct{},"form",&tmpStruct{Foo: "foo", Bar: "", Baz: 123, Qux: 0, Nil: ""}},
+		{&tmpStruct{},"json",&tmpStruct{Foo: "", Bar: "", Baz: 0, Qux: 123, Nil: ""}},
 	}
 
 	for i, input := range inputs {
