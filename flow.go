@@ -87,6 +87,18 @@ func(f *valueFlow) Int() int {
 }
 
 
+// Int64 trans the raw value to int64.
+func(f *valueFlow) Int64() int64 {
+	return int64(f.Int())
+}
+
+
+// Int8 trans the raw value to int8.
+func(f *valueFlow) Int8() int8 {
+	return int8(f.Int())
+}
+
+
 // Float64 trans the raw value to float64.
 func(f *valueFlow) Float64() float64 {
 	f64, _ := strconv.ParseFloat(f.value, 64)

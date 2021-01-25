@@ -17,7 +17,7 @@ type trie struct {
 	handlers   map[string][]HandlerFunc
 	isParam    bool
 	isPath     bool
-	p          string
+	p          string // p means param or path
 	childs     map[string]*trie
 	m          []string // m means the passed methods
 }
