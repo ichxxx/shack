@@ -1,6 +1,7 @@
 package shack
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -52,6 +53,15 @@ func TestRouterGroup(t *testing.T) {
 			r.Use(onlyForV2())
 			r.GET("/test", func(ctx *Context){})
 		})
+
+		r.Group("/v3", func(r *Router) {
+			r.Add(func(r *Router) {
+				r.GET("/test", func(ctx *Context) {
+					ctx.String(" and ")
+					ctx.String("this is v3")
+				})
+			})
+		})
 	}
 	r := NewRouter()
 	r.Group("/", r2).Use(forAll())
@@ -69,6 +79,10 @@ func TestRouterGroup(t *testing.T) {
 		t.Fatalf(body)
 	}
 	if _, body := request(t, ts, "GET", "/v2/test", nil); body != "for all and only for v2" {
+		t.Fatalf(body)
+	}
+	if _, body := request(t, ts, "GET", "/v3/test", nil); body != "for all and this is v3" {
+		fmt.Println(body)
 		t.Fatalf(body)
 	}
 }

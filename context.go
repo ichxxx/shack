@@ -10,16 +10,18 @@ import (
 )
 
 type Context struct {
-	Router     *Router
-	StatusCode int
-	Writer     http.ResponseWriter
-	Request    *http.Request
-	Path       string
-	Method     string
-	Params     map[string]string
-	Bucket     *sync.Map
-	handlers   []HandlerFunc
-	index      int8
+	Router         *Router
+	HttpStatusCode int
+	StatusCode     int
+	Writer         http.ResponseWriter
+	Request        *http.Request
+	Path           string
+	Method         string
+	Params         map[string]string
+	Bucket         *sync.Map
+	bodyBuf        []byte
+	handlers       []HandlerFunc
+	index          int8
 }
 
 const abortIndex int8 = math.MaxInt8 / 2
@@ -63,6 +65,16 @@ func (c *Context) Data(data []byte) *Context {
 // Status sets the status of response.
 func(c *Context) Status(code int) *Context {
 	c.StatusCode = code
+	return c
+}
+
+
+// HttpStatus sets the http status of response.
+func(c *Context) HttpStatus(code int) *Context {
+	if code < 100 || code > 500 {
+		return c
+	}
+	c.HttpStatusCode = code
 	c.Writer.WriteHeader(code)
 	return c
 }
@@ -83,8 +95,16 @@ func(c *Context) Param(key string) string {
 
 // Body returns a workflow of the request body.
 func(c *Context) Body() *bodyFlow {
-	b, _ := ioutil.ReadAll(c.Request.Body)
-	return newBodyFlow(b)
+	if len(c.bodyBuf) > 0 {
+		return newBodyFlow(c.bodyBuf)
+	}
+
+	buf, err := ioutil.ReadAll(c.Request.Body)
+	if err == nil {
+		c.bodyBuf = make([]byte, len(buf))
+		copy(c.bodyBuf, buf)
+	}
+	return newBodyFlow(buf)
 }
 
 

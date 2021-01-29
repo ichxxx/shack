@@ -132,7 +132,7 @@ func(r *Router) Mount(pattern string, router *Router) {
 	}
 
 	if router == nil {
-		panic(fmt.Sprintf("shack: handler is nil in mounting %s", pattern))
+		panic(fmt.Sprintf("shack: handler is nil while mounting %s", pattern))
 	}
 
 	if r.sub[pattern] != nil {
@@ -152,7 +152,7 @@ func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 	}
 
 	if fn == nil {
-		panic(fmt.Sprintf("shack: fn is nil in grouping %s", pattern))
+		panic(fmt.Sprintf("shack: fn is nil while grouping %s", pattern))
 	}
 
 	root := r
@@ -186,6 +186,29 @@ func(r *Router) Group(pattern string, fn func(r *Router)) *Router {
 
 	mergeSubRouter(root, sub, segments[segmentsLen-1])
 	mergeSubTrie(root.trie, sub.trie, segments[segmentsLen-1])
+	return root.sub[segments[segmentsLen-1]]
+}
+
+
+// Add is a shortcut of Group("/", fn).
+func(r *Router) Add(fn func(r *Router)) *Router {
+	if fn == nil {
+		panic(fmt.Sprintf("shack: fn is nil while adding"))
+	}
+
+	root := r
+	sub := NewRouter()
+	fn(sub)
+	for method, handler := range sub.trie.handlers {
+		root.trie.handlers[method] = handler
+	}
+
+	for key, ss := range sub.sub {
+		mergeSubRouter(root, ss, key)
+	}
+	for key, st := range sub.trie.childs {
+		mergeSubTrie(root.trie, st, key)
+	}
 	return r
 }
 
