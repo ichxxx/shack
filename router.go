@@ -39,7 +39,7 @@ func NewRouter() *Router {
 
 func(r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	c := newContext(w, req)
-	c.handlers = append(c.handlers, getGroupMiddlewares(r, c.Path)...)
+	c.handlers = append(c.handlers, getGroupMiddlewares(r, c.Request.URL.Path)...)
 	r.handler(c)
 }
 
@@ -64,7 +64,7 @@ func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
 
 
 func(r *Router) handler(ctx *Context) {
-	handlers, params, ok := r.trie.search(ctx.Method, ctx.Path)
+	handlers, params, ok := r.trie.search(ctx.Request.Method, ctx.Request.URL.Path)
 	if ok && len(handlers) > 0  {
 		ctx.Params = params
 		ctx.handlers = append(ctx.handlers, handlers...)

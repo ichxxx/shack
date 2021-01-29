@@ -40,18 +40,22 @@ func(bc *BaseConfig) bind(config config, section string) {
 }
 
 
+// Add adds a config will be loaded.
 func(cm *configManager) Add(config config, section string) {
 	config.bind(config, section)
 	cm.configs = append(cm.configs, config)
 }
 
 
+// File specify a toml file to load.
+// Default file is `config.toml`.
 func(cm *configManager) File(file string) *configManager {
 	configFile = file
 	return cm
 }
 
 
+// Load loads the previously added configs from the toml file.
 func(cm *configManager) Load() {
 	cm.loadConfig()
 

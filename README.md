@@ -73,6 +73,28 @@ func main() {
 }
 ```
 
+### Json Body
+```go
+type query struct {
+	Foo int    `json:"foo"`
+	Bar string `json:"bar"`
+}
+
+func main() {
+	r := shack.NewRouter()
+	r.GET("/example", func(ctx *shack.Context) {		
+		query := &query{}
+		ctx.Body().BindJson(query)
+        
+		ctx.JSON(rest.R().Data(
+			"query", query,
+		))
+	})
+
+	shack.Run(":8080", r)
+}
+```
+
 ### Multipart/Urlencoded Form
 ```go
 type forms struct {
@@ -108,7 +130,10 @@ func main() {
 	r.Group("/api", func(r *shack.Router) {
 		r.Use(onlyForApi)
 		r.Handle("/article", articleHandler)
-		r.Handle("/user", userHandler, http.MethodGet, http.MethodPost)
+		
+        r.Add(func(r *shack.Router) {
+            r.Handle("/user", userHandler, http.MethodGet, http.MethodPost)
+        })
 	})
 	
 	shack.Run(":8080", r)
@@ -142,5 +167,44 @@ func main() {
 	shack.Log.Error("some error",
 		"timestamp", time.Now().Unix(),
 	)
+}
+```
+
+### Config
+Shack has a simple toml config parser built in.
+
+You can use it as follows:
+
+```toml
+# conf.toml
+
+[App]
+Host = "0.0.0.0"
+Port = 8080
+```
+
+```go
+var AppConfig = &struct{
+    // To use automatic parsing,
+    // you have to combine shack.BaseConfig
+    // in a struct.
+    shack.BaseConfig
+    Host string
+    Port int
+}
+
+func init() {
+    // The second args `App` is the section's name in the toml file.
+    shack.Config.Add(AppConfig, "App")
+}
+
+func main() {
+    shack.Config.File("conf.toml").Load()
+
+    // After that, shack will parse the config automatically.
+    // You can just use it.
+
+    fmt.Println(AppConfig.Host)
+    fmt.Println(AppConfig.Port)
 }
 ```

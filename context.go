@@ -10,15 +10,13 @@ import (
 )
 
 type Context struct {
-	Router         *Router
 	HttpStatusCode int
 	StatusCode     int
 	Writer         http.ResponseWriter
 	Request        *http.Request
-	Path           string
-	Method         string
 	Params         map[string]string
 	Bucket         *sync.Map
+	queryCache     map[string]string
 	bodyBuf        []byte
 	handlers       []HandlerFunc
 	index          int8
@@ -31,8 +29,6 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Writer : w,
 		Request: r,
-		Path   : r.URL.Path,
-		Method : r.Method,
 		index  : -1,
 	}
 }
@@ -126,10 +122,21 @@ func(c *Context) Forms() *formFlow {
 
 // Query returns a workflow of the keyed url query value.
 func(c *Context) Query(key string, defaultValue ...string) *valueFlow {
+	if c.queryCache == nil {
+		c.queryCache = make(map[string]string)
+		goto get
+	}
+
+	if value, found := c.queryCache[key]; found {
+		return newValueFlow(value)
+	}
+
+	get:
 	value := c.Request.URL.Query().Get(key)
 	if value == "" && len(defaultValue) > 0 {
-		return newValueFlow(defaultValue[0])
+		value = defaultValue[0]
 	}
+	c.queryCache[key] = value
 
 	return newValueFlow(value)
 }

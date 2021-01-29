@@ -32,12 +32,12 @@ type _Router interface {
 	PATCH(pattern string, handler HandlerFunc) *trie
 	OPTIONS(pattern string, handler HandlerFunc) *trie
 	HEAD(pattern string, handler HandlerFunc) *trie
-	Handle(pattern string, handler HandlerFunc)
+	Handle(pattern string, fn HandlerFunc, methods ...string)
 
-	With(middleware ...HandlerFunc)
 	Use(middlewares ...HandlerFunc)
 	Mount(pattern string, router *Router)
 	Group(pattern string, fn func(r *Router)) *Router
+	Add(fn func(r *Router)) *Router
 
 	NotFound(handler HandlerFunc)
 	MethodNotAllowed(handler HandlerFunc)
@@ -48,7 +48,7 @@ type _Logger interface {
 
 	Level(level int8) *logger
 	Encoding(encoding string) *logger
-	Output(paths ...string) *logger
+	Output(paths string) *logger
 	Dev() *logger
 
 	Debug(msg string, keyAndValues ...interface{})
@@ -61,6 +61,7 @@ type _Logger interface {
 
 type _Context interface {
 	Status(code int) *Context
+	HttpStatus(code int) *Context
 	Header(key string, value string) *Context
 	String(s ...string) *Context
 	JSON(data interface{}) *Context
@@ -70,11 +71,12 @@ type _Context interface {
 	Body() *bodyFlow
 	Form(key string) *valueFlow
 	Forms() *formFlow
-	Query(key string) *valueFlow
-	RawQuery() *valueFlow
+	Query(key string, defaultValue ...string) *valueFlow
+	RawQuery() *rawFlow
 
-	Set(key string, value string)
-	Get(key string) string
+	Set(key interface{}, value interface{})
+	Get(key interface{}) (value interface{}, ok bool)
+	Delete(key interface{})
 
 	Abort()
 	Next()
@@ -84,8 +86,17 @@ type _Context interface {
 type _Flow interface {
 	Value()
 	Int() int
+	Int8() int8
+	Int64() int64
 	Float64() float64
 	Bool() bool
 	BindJson(dst interface{}) error
 	Bind(dst interface{}, tag ...string) error
+}
+
+
+type _Config interface {
+	File(file string) *configManager
+	Add(config config, section string)
+	Load()
 }
