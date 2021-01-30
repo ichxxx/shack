@@ -77,7 +77,7 @@ func(cm *configManager) loadConfig() {
 }
 
 
-func(cm *configManager) getConf(key string, rv reflect.Value) reflect.Value {
+func(cm *configManager) getFieldValue(key string, rv reflect.Value) reflect.Value {
 	switch rv.Kind() {
 	case reflect.String:
 		return reflect.ValueOf(cm.Core.GetString(key))
@@ -120,24 +120,24 @@ func(bc *BaseConfig) mapConfig() {
 
 	for i := 0; i < size; i++ {
 		structField := t.Field(i)
-		if structField.Type.Kind() == reflect.Struct || structField.Type.Kind() == reflect.Map {
+		if sFieldKind := structField.Type.Kind(); sFieldKind == reflect.Struct || sFieldKind == reflect.Map {
 			continue
 		}
 
 		if mode != "release" {
-			confField := fmt.Sprintf("%s.%s.%s", bc.section, mode, structField.Name)
-			if Config.Core.IsSet(confField) {
+			configField := fmt.Sprintf("%s.%s.%s", bc.section, mode, structField.Name)
+			if Config.Core.IsSet(configField) {
 				rv.Field(i).Set(
-					Config.getConf(confField, rv.Field(i)),
+					Config.getFieldValue(configField, rv.Field(i)),
 				)
 				continue
 			}
 		}
 
-		confField := fmt.Sprintf("%s.%s", bc.section, structField.Name)
-		if Config.Core.IsSet(confField) {
+		configField := fmt.Sprintf("%s.%s", bc.section, structField.Name)
+		if Config.Core.IsSet(configField) {
 			rv.Field(i).Set(
-				Config.getConf(confField, rv.Field(i)),
+				Config.getFieldValue(configField, rv.Field(i)),
 			)
 		}
 	}

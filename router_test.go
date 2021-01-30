@@ -16,7 +16,7 @@ func forAll() HandlerFunc {
 	return func(c *Context) {
 		t := time.Now()
 		c.String("for all")
-		log.Printf("%s in %v for all", c.Path, time.Since(t))
+		log.Printf("%s in %v for all", c.Request.URL.Path, time.Since(t))
 	}
 }
 
@@ -26,7 +26,7 @@ func onlyForV1() HandlerFunc {
 		t := time.Now()
 		c.String(" and ")
 		c.String("only for v1")
-		log.Printf("%s in %v for v1", c.Path, time.Since(t))
+		log.Printf("%s in %v for v1", c.Request.URL.Path, time.Since(t))
 	}
 }
 
@@ -37,7 +37,7 @@ func onlyForV2() HandlerFunc {
 		t := time.Now()
 		c.String(" and ")
 		c.String("only for v2")
-		log.Printf("%s in %v for group v2", c.Path, time.Since(t))
+		log.Printf("%s in %v for group v2", c.Request.URL.Path, time.Since(t))
 	}
 }
 
