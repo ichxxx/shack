@@ -5,6 +5,7 @@ import (
 	"net/http"
 )
 
+type M map[string]interface{}
 
 func Run(addr string, router *Router) {
 	err := http.ListenAndServe(addr, router)

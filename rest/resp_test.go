@@ -2,6 +2,7 @@ package rest
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -17,19 +18,18 @@ func TestResp(t *testing.T) {
 	r := shack.NewRouter()
 
 	r.GET("/resp/1", func(ctx *shack.Context){
-		ctx.JSON(Resp().OK().Data("foo", "foo", "bar", 123))
+		R(ctx).Data("foo", "foo", "bar", 123).OK()
 	})
 	r.GET("/resp/2", func(ctx *shack.Context){
-		Resp().DefaultFailCode(2)
-		ctx.JSON(Resp().Fail().Error("fail"))
+		DefaultFailCode(2)
+		R(ctx).Error(errors.New("fail")).Fail()
 	})
 	r.GET("/resp/3", func(ctx *shack.Context){
 		data := struct {
 			Foo string `json:"foo"`
 		}{"bar"}
-		ctx.JSON(Resp().Data(data))
+		R(ctx).Data(data).Write()
 	})
-
 
 	ts := httptest.NewServer(r)
 	defer ts.Close()
@@ -48,6 +48,46 @@ func TestResp(t *testing.T) {
 
 	_, data = request(t, ts, "GET", "/resp/3", nil)
 	result = map[string]interface{}{"data":map[string]interface{}{"foo":"bar"}}
+	if !reflect.DeepEqual(data, result) {
+		t.Fatal(data)
+	}
+}
+
+
+func TestRespWithCtx(t *testing.T) {
+	r := shack.NewRouter()
+
+	r.GET("/resp/1", func(ctx *shack.Context){
+		R(ctx).OK()
+	})
+	r.GET("/resp/2", func(ctx *shack.Context){
+		DefaultFailCode(2)
+		DefaultFailMsg("test_2")
+		R(ctx).Fail()
+	})
+	r.GET("/resp/3", func(ctx *shack.Context){
+		ctx.Status(3)
+		ctx.Error(errors.New("test_3"))
+		R(ctx).Fail()
+	})
+
+	ts := httptest.NewServer(r)
+	defer ts.Close()
+
+	_, data := request(t, ts, "GET", "/resp/1", nil)
+	result := map[string]interface{}{"code":0.0, "msg":"success"}
+	if !reflect.DeepEqual(data, result) {
+		t.Fatal(data)
+	}
+
+	_, data = request(t, ts, "GET", "/resp/2", nil)
+	result = map[string]interface{}{"code":2.0, "msg":"test_2"}
+	if !reflect.DeepEqual(data, result) {
+		t.Fatal(data)
+	}
+
+	_, data = request(t, ts, "GET", "/resp/3", nil)
+	result = map[string]interface{}{"code":3.0, "msg":"test_2", "error": "test_3"}
 	if !reflect.DeepEqual(data, result) {
 		t.Fatal(data)
 	}

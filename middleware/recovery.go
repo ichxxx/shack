@@ -17,7 +17,8 @@ func Recovery() shack.HandlerFunc {
 			if err := recover(); err != nil {
 				message := fmt.Sprintf("%s", err)
 				log.Printf("%s\n\n", trace(message))
-				ctx.Status(http.StatusInternalServerError)
+				ctx.HttpStatus(http.StatusInternalServerError)
+				ctx.String("Internal Server Error")
 			}
 		}()
 

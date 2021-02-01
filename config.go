@@ -82,7 +82,12 @@ func(cm *configManager) getFieldValue(key string, rv reflect.Value) reflect.Valu
 	case reflect.String:
 		return reflect.ValueOf(cm.Core.GetString(key))
 	case reflect.Slice:
-		return reflect.ValueOf(cm.Core.GetStringSlice(key))
+		switch reflect.TypeOf(rv.Interface()).Elem().Kind() {
+		case reflect.String:
+			return reflect.ValueOf(cm.Core.GetStringSlice(key))
+		case reflect.Int:
+			return reflect.ValueOf(cm.Core.GetIntSlice(key))
+		}
 	case reflect.Bool:
 		return reflect.ValueOf(cm.Core.GetBool(key))
 	case reflect.Int:

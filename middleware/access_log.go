@@ -47,7 +47,7 @@ func AccessLog(path ...string) shack.HandlerFunc {
 			zap.String("uri", ctx.Request.URL.Path),
 			zap.String("method", ctx.Request.Method),
 			zap.String("query", ctx.Request.URL.RawQuery),
-			zap.Int("code", ctx.StatusCode),
+			zap.Int("code", *ctx.StatusCode),
 			zap.String("remote_address", ctx.Request.RemoteAddr),
 			zap.String("protocol", ctx.Request.Proto),
 			zap.String("server_name", ctx.Request.URL.Host),

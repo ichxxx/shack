@@ -11,12 +11,16 @@ import (
 
 type Context struct {
 	HttpStatusCode int
-	StatusCode     int
+	StatusCode     *int
 	Writer         http.ResponseWriter
 	Request        *http.Request
+	Path           string
+	Method         string
 	Params         map[string]string
-	Bucket         *sync.Map
-	queryCache     map[string]string
+	Bucket         map[string]interface{}
+	SyncBucket     *sync.Map
+	Err            error
+	errOnce        *sync.Once
 	bodyBuf        []byte
 	handlers       []HandlerFunc
 	index          int8
@@ -29,6 +33,8 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Writer : w,
 		Request: r,
+		Path   : r.URL.Path,
+		Method : r.Method,
 		index  : -1,
 	}
 }
@@ -60,7 +66,7 @@ func (c *Context) Data(data []byte) *Context {
 
 // Status sets the status of response.
 func(c *Context) Status(code int) *Context {
-	c.StatusCode = code
+	c.StatusCode = &code
 	return c
 }
 
@@ -122,21 +128,10 @@ func(c *Context) Forms() *formFlow {
 
 // Query returns a workflow of the keyed url query value.
 func(c *Context) Query(key string, defaultValue ...string) *valueFlow {
-	if c.queryCache == nil {
-		c.queryCache = make(map[string]string)
-		goto get
-	}
-
-	if value, found := c.queryCache[key]; found {
-		return newValueFlow(value)
-	}
-
-	get:
 	value := c.Request.URL.Query().Get(key)
 	if value == "" && len(defaultValue) > 0 {
-		value = defaultValue[0]
+		return newValueFlow(defaultValue[0])
 	}
-	c.queryCache[key] = value
 
 	return newValueFlow(value)
 }
@@ -149,31 +144,73 @@ func(c *Context) RawQuery() *rawFlow {
 }
 
 
-// Set stores a key/value pair in the context bucket.
-func(c *Context) Set(key interface{}, value interface{}) {
-	if c.Bucket == nil {
-		c.Bucket = &sync.Map{}
+// Error sets the first non-nil error of the context.
+func(c *Context) Error(err error) {
+	if err != nil {
+		if c.errOnce == nil {
+			c.errOnce = &sync.Once{}
+		}
+		c.errOnce.Do(func() {
+			c.Err = err
+		})
 	}
-	c.Bucket.Store(key, value)
+}
+
+
+
+// SetSync stores a key/value pair in the context bucket synchronicity.
+func(c *Context) SetSync(key string, value interface{}) {
+	if c.SyncBucket == nil {
+		c.SyncBucket = &sync.Map{}
+	}
+	c.SyncBucket.Store(key, value)
+}
+
+
+// GetSync returns the value for the given key in the context bucket synchronicity.
+func(c *Context) GetSync(key string) (value interface{}, ok bool) {
+	if c.SyncBucket == nil {
+		return
+	}
+	return c.SyncBucket.Load(key)
+}
+
+
+// DeleteSync removes the value for the given key in the context bucket synchronicity.
+func(c *Context) DeleteSync(key string) {
+	if c.SyncBucket == nil {
+		return
+	}
+	c.SyncBucket.Delete(key)
+	return
+}
+
+
+// Set stores a key/value pair in the context bucket.
+func(c *Context) Set(key string, value interface{}) {
+	if c.Bucket == nil {
+		c.Bucket = make(map[string]interface{})
+	}
+	c.Bucket[key] = value
 }
 
 
 // Get returns the value for the given key in the context bucket.
-func(c *Context) Get(key interface{}) (value interface{}, ok bool) {
+func(c *Context) Get(key string) (value interface{}, ok bool) {
 	if c.Bucket == nil {
 		return
 	}
-	return c.Bucket.Load(key)
+	value, ok = c.Bucket[key]
+	return
 }
 
 
 // Delete removes the value for the given key in the context bucket.
-func(c *Context) Delete(key interface{}) {
+func(c *Context) Delete(key string) {
 	if c.Bucket == nil {
 		return
 	}
-	c.Bucket.Delete(key)
-	return
+	delete(c.Bucket, key)
 }
 
 

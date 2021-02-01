@@ -20,7 +20,7 @@ import (
 func main() {
 	r := shack.NewRouter()
 	r.GET("/example", func(ctx *shack.Context) {
-		ctx.JSON(rest.R().OK())
+		rest.Resp(ctx).OK()
 	}).With(middleware.Recovery())
 
 	shack.Run(":8080", r)
@@ -36,10 +36,9 @@ func main() {
 	r.GET("/example/:id/*path", func(ctx *shack.Context) {
 		id := ctx.Param("id")
 		path := ctx.Param("path")
-		ctx.JSON(rest.R().OK().Data(
-			"id", id,
-			"path", path,
-		))
+		ctx.JSON(shack.M{"id": id, "path": path})
+        // or
+        // rest.Resp(ctx).Data("id", id, "path", path).OK()
 	})
 
 	shack.Run(":8080", r)
@@ -62,11 +61,11 @@ func main() {
 		query := &query{}
 		ctx.RawQuery().Bind(query, "json")
         
-		ctx.JSON(rest.R().Data(
+		rest.Resp(ctx).Data(
 			"foo", foo,
 			"bar", bar,
 			"query", query,
-		))
+		)).OK()
 	})
 
 	shack.Run(":8080", r)
@@ -86,9 +85,9 @@ func main() {
 		query := &query{}
 		ctx.Body().BindJson(query)
         
-		ctx.JSON(rest.R().Data(
+		rest.Resp(ctx).Data(
 			"query", query,
-		))
+		).OK()
 	})
 
 	shack.Run(":8080", r)
@@ -111,10 +110,10 @@ func main() {
 		forms := &forms{}
 		ctx.Forms().Bind(forms, "json")
         
-		ctx.JSON(rest.R().Data(
+		rest.Resp(ctx).Data(
 			"data", data,
 			"forms", forms,
-		))
+		).OK()
 	})
 
 	shack.Run(":8080", r)

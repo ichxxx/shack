@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"strconv"
 	"sync"
+
+	"github.com/ichxxx/shack"
 )
 
 var (
@@ -16,38 +18,90 @@ var (
 )
 
 type resp struct {
-	C  *int        `json:"code,omitempty"`
-	M  string      `json:"msg,omitempty"`
-	E  interface{} `json:"error,omitempty"`
-	D  interface{} `json:"data,omitempty"`
+	ctx *shack.Context
+	C   *int        `json:"code,omitempty"`
+	M   string      `json:"msg,omitempty"`
+	E   error       `json:"error,omitempty"`
+	D   interface{} `json:"data,omitempty"`
+}
+
+
+type restErr struct {
+	err error
+}
+
+
+func(e *restErr) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", e.Error())), nil
+}
+
+
+func(e *restErr) Error() string {
+	return e.err.Error()
 }
 
 
 // R is a shortcut of Resp
-func R() *resp {
-	return Resp()
+func R(ctx *shack.Context) *resp {
+	return Resp(ctx)
 }
 
 
-func Resp() *resp {
+func Resp(ctx *shack.Context) *resp {
 	r := respPool.Get().(*resp)
 	r.reset()
 	respPool.Put(r)
+	r.ctx = ctx
 	return r
 }
 
 
-func(r *resp) OK() *resp {
-	r.C = &okC
-	r.M = okM
-	return r
+func(r *resp) OK() {
+	if (r.ctx == nil || r.ctx.StatusCode == nil) && r.C == nil {
+		r.C = &okC
+	} else if r.ctx != nil {
+		if r.ctx.StatusCode != nil {
+			r.C = r.ctx.StatusCode
+		} else {
+			r.ctx.Status(okC)
+		}
+	}
+
+	if len(r.M) == 0 {
+		r.M = okM
+	}
+
+	r.ctx.JSON(r)
 }
 
 
-func(r *resp) Fail() *resp {
-	r.C = &failC
-	r.M = failM
-	return r
+func(r *resp) Fail() {
+	if (r.ctx == nil || r.ctx.StatusCode == nil) && r.C == nil {
+		r.C = &failC
+	} else if r.ctx != nil {
+		if r.ctx.StatusCode != nil {
+			r.C = r.ctx.StatusCode
+		} else {
+			r.ctx.Status(failC)
+		}
+	}
+
+	if len(r.M) == 0 {
+		r.M = failM
+	}
+
+	if r.ctx.Err != nil && r.E == nil {
+		r.Error(r.ctx.Err)
+	} else if r.E != nil && r.ctx.Err == nil {
+		r.ctx.Error(r.E)
+	}
+
+	r.ctx.JSON(r)
+}
+
+
+func(r *resp) Write() {
+	r.ctx.JSON(r)
 }
 
 
@@ -63,8 +117,8 @@ func(r *resp) Msg(msg string) *resp {
 }
 
 
-func(r *resp) Error(error interface{}) *resp {
-	r.E = error
+func(r *resp) Error(err error) *resp {
+	r.E = &restErr{err: err}
 	return r
 }
 
@@ -87,27 +141,28 @@ func(r *resp) Data(keyAndValues ...interface{}) *resp {
 }
 
 
-func(r *resp) DefaultOkCode(code int) {
+func DefaultOkCode(code int) {
 	okC = code
 }
 
 
-func(r *resp) DefaultOkMsg(msg string) {
+func DefaultOkMsg(msg string) {
 	okM = msg
 }
 
 
-func(r *resp) DefaultFailCode(code int) {
+func DefaultFailCode(code int) {
 	failC = code
 }
 
 
-func(r *resp) DefaultFailMsg(msg string) {
+func DefaultFailMsg(msg string) {
 	failM = msg
 }
 
 
 func(r *resp) reset() {
+	r.ctx = nil
 	r.C = nil
 	r.M = r.M[0:0]
 	r.E = nil

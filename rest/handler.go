@@ -1,6 +1,9 @@
 package rest
 
 import (
+	"errors"
+	"net/http"
+
 	"github.com/ichxxx/shack"
 )
 
@@ -8,8 +11,9 @@ import (
 // error message
 func NotFoundHandler() shack.HandlerFunc {
 	return func(ctx *shack.Context) {
+		ctx.HttpStatus(http.StatusNotFound)
 		ctx.Header("Content-Type", "application/json")
-		ctx.JSON(Resp().Error("resource not found"))
+		ctx.JSON(Resp(ctx).Error(errors.New("resource not found")))
 	}
 }
 
@@ -17,7 +21,8 @@ func NotFoundHandler() shack.HandlerFunc {
 // REST compliant error message
 func MethodNotAllowedHandler() shack.HandlerFunc {
 	return func(ctx *shack.Context) {
+		ctx.HttpStatus(http.StatusMethodNotAllowed)
 		ctx.Header("Content-Type", "application/json")
-		ctx.JSON(Resp().Error("method not allowed"))
+		ctx.JSON(Resp(ctx).Error(errors.New("method not allowed")))
 	}
 }
