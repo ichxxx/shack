@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"unsafe"
 )
 
 type Context struct {
@@ -49,8 +50,15 @@ func(c *Context) String(s ...string) *Context {
 
 
 // JSON marshals and writes data to http.ResponseWriter.
+// Support raw json (string or []byte), struct and map.
 func(c *Context) JSON(data interface{}) *Context {
 	c.Header("Content-Type", "application/json")
+
+	if b, ok := getBytes(data); ok {
+		c.Writer.Write(b)
+		return c
+	}
+
 	b, _ := json.Marshal(data)
 	c.Writer.Write(b)
 	return c
@@ -228,4 +236,22 @@ func(c *Context) Next() {
 		c.handlers[c.index](c)
 		c.index++
 	}
+}
+
+
+func getBytes(v interface{}) (b []byte, ok bool) {
+	switch d := v.(type) {
+	case []byte:
+		return d, true
+	case string:
+		return bytesFromString(d), true
+	}
+	return nil, false
+}
+
+
+func bytesFromString(s string) []byte {
+	tmp := (*[2]uintptr)(unsafe.Pointer(&s))
+	x := [3]uintptr{tmp[0], tmp[1], tmp[1]}
+	return *(*[]byte)(unsafe.Pointer(&x))
 }

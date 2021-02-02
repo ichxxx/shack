@@ -40,10 +40,10 @@ func AccessLog(path ...string) shack.HandlerFunc {
 		ctx.Next()
 
 		duration := time.Since(start)
-		durationMs := duration.Nanoseconds() / (1000 * 1000)
+		durationMs := float64(duration.Nanoseconds()) / (1000 * 1000)
 
 		accessLogger.Info("",
-			zap.Int64("response_time", durationMs),
+			zap.Float64("response_ms", durationMs),
 			zap.String("uri", ctx.Request.URL.Path),
 			zap.String("method", ctx.Request.Method),
 			zap.String("query", ctx.Request.URL.RawQuery),

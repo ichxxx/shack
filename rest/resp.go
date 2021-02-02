@@ -57,12 +57,11 @@ func Resp(ctx *shack.Context) *resp {
 
 
 func(r *resp) OK() {
-	if (r.ctx == nil || r.ctx.StatusCode == nil) && r.C == nil {
-		r.C = &okC
-	} else if r.ctx != nil {
-		if r.ctx.StatusCode != nil {
+	if r.C == nil {
+		if r.ctx != nil && r.ctx.StatusCode != nil {
 			r.C = r.ctx.StatusCode
 		} else {
+			r.C = &okC
 			r.ctx.Status(okC)
 		}
 	}
@@ -76,12 +75,11 @@ func(r *resp) OK() {
 
 
 func(r *resp) Fail() {
-	if (r.ctx == nil || r.ctx.StatusCode == nil) && r.C == nil {
-		r.C = &failC
-	} else if r.ctx != nil {
-		if r.ctx.StatusCode != nil {
+	if r.C == nil {
+		if r.ctx != nil && r.ctx.StatusCode != nil {
 			r.C = r.ctx.StatusCode
 		} else {
+			r.C = &failC
 			r.ctx.Status(failC)
 		}
 	}
