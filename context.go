@@ -3,6 +3,7 @@ package shack
 import (
 	"encoding/json"
 	"io/ioutil"
+	"log"
 	"math"
 	"net/http"
 	"strings"
@@ -15,8 +16,6 @@ type Context struct {
 	StatusCode     *int
 	Writer         http.ResponseWriter
 	Request        *http.Request
-	Path           string
-	Method         string
 	Params         map[string]string
 	Bucket         map[string]interface{}
 	SyncBucket     *sync.Map
@@ -34,8 +33,6 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 	return &Context{
 		Writer : w,
 		Request: r,
-		Path   : r.URL.Path,
-		Method : r.Method,
 		index  : -1,
 	}
 }
@@ -44,7 +41,10 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 // String writes string to http.ResponseWriter.
 func(c *Context) String(s ...string) *Context {
 	c.Header("Content-Type", "text/plain")
-	c.Writer.Write(bytesFromString(strings.Join(s, "")))
+	_, err := c.Writer.Write(bytesFromString(strings.Join(s, "")))
+	if err != nil {
+		log.Printf("shack: ResponseWriter write error, %s", err.Error())
+	}
 	return c
 }
 
@@ -55,19 +55,31 @@ func(c *Context) JSON(data interface{}) *Context {
 	c.Header("Content-Type", "application/json")
 
 	if b, ok := getBytes(data); ok {
-		c.Writer.Write(b)
+		_, err := c.Writer.Write(b)
+		if err != nil {
+			log.Printf("shack: ResponseWriter write error, %s", err.Error())
+		}
 		return c
 	}
 
-	b, _ := json.Marshal(data)
-	c.Writer.Write(b)
+	b, err := json.Marshal(data)
+	if err != nil {
+		log.Printf("shack: marshal json error, %s", err.Error())
+	}
+	_, err = c.Writer.Write(b)
+	if err != nil {
+		log.Printf("shack: ResponseWriter write error, %s", err.Error())
+	}
 	return c
 }
 
 
 // Data writes data to http.ResponseWriter.
 func (c *Context) Data(data []byte) *Context {
-	c.Writer.Write(data)
+	_, err := c.Writer.Write(data)
+	if err != nil {
+		log.Printf("shack: ResponseWriter write error, %s", err.Error())
+	}
 	return c
 }
 
