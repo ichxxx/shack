@@ -44,7 +44,7 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 // String writes string to http.ResponseWriter.
 func(c *Context) String(s ...string) *Context {
 	c.Header("Content-Type", "text/plain")
-	c.Writer.Write([]byte(strings.Join(s, "")))
+	c.Writer.Write(bytesFromString(strings.Join(s, "")))
 	return c
 }
 
@@ -163,7 +163,6 @@ func(c *Context) Error(err error) {
 		})
 	}
 }
-
 
 
 // SetSync stores a key/value pair in the context bucket synchronicity.

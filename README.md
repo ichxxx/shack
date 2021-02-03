@@ -18,138 +18,138 @@ import (
 
 
 func main() {
-	r := shack.NewRouter()
-	r.GET("/example", func(ctx *shack.Context) {
-		rest.Resp(ctx).OK()
-	}).With(middleware.Recovery())
+    r := shack.NewRouter()
+    r.GET("/example", func(ctx *shack.Context) {
+        rest.Resp(ctx).OK()
+    }).With(middleware.Recovery())
 
-	shack.Run(":8080", r)
-	// or
-	// http.ListenAndServe(":8080", r)
+    shack.Run(":8080", r)
+    // or
+    // http.ListenAndServe(":8080", r)
 }
 ```
 
 ### Parameters in path
 ```go
 func main() {
-	r := shack.NewRouter()
-	r.GET("/example/:id/*path", func(ctx *shack.Context) {
-		id := ctx.Param("id")
-		path := ctx.Param("path")
-		ctx.JSON(shack.M{"id": id, "path": path})
+    r := shack.NewRouter()
+    r.GET("/example/:id/*path", func(ctx *shack.Context) {
+        id := ctx.Param("id")
+        path := ctx.Param("path")
+        ctx.JSON(shack.M{"id": id, "path": path})
         // or
         // rest.Resp(ctx).Data("id", id, "path", path).OK()
-	})
+    })
 
-	shack.Run(":8080", r)
+    shack.Run(":8080", r)
 }
 ```
 
 ### Querystring parameters
 ```go
 type query struct {
-	Foo int    `json:"foo"`
-	Bar string `json:"bar"`
+    Foo int    `json:"foo"`
+    Bar string `json:"bar"`
 }
 
 func main() {
-	r := shack.NewRouter()
-	r.GET("/example", func(ctx *shack.Context) {
-		foo := ctx.Query("foo").Int()
-		bar := ctx.Query("bar", "defaultBar").Value()
-		
-		query := &query{}
-		ctx.RawQuery().Bind(query, "json")
+    r := shack.NewRouter()
+    r.GET("/example", func(ctx *shack.Context) {
+        foo := ctx.Query("foo").Int()
+        bar := ctx.Query("bar", "defaultBar").Value()
         
-		rest.Resp(ctx).Data(
-			"foo", foo,
-			"bar", bar,
-			"query", query,
-		)).OK()
-	})
+        query := &query{}
+        ctx.RawQuery().Bind(query, "json")
+        
+        rest.Resp(ctx).Data(
+            "foo", foo,
+            "bar", bar,
+            "query", query,
+        )).OK()
+    })
 
-	shack.Run(":8080", r)
+    shack.Run(":8080", r)
 }
 ```
 
 ### Json Body
 ```go
 type query struct {
-	Foo int    `json:"foo"`
-	Bar string `json:"bar"`
+    Foo int    `json:"foo"`
+    Bar string `json:"bar"`
 }
 
 func main() {
-	r := shack.NewRouter()
-	r.GET("/example", func(ctx *shack.Context) {		
-		query := &query{}
-		ctx.Body().BindJson(query)
+    r := shack.NewRouter()
+    r.GET("/example", func(ctx *shack.Context) {		
+        query := &query{}
+        ctx.Body().BindJson(query)
         
-		rest.Resp(ctx).Data(
-			"query", query,
-		).OK()
-	})
+        rest.Resp(ctx).Data(
+            "query", query,
+        ).OK()
+    })
 
-	shack.Run(":8080", r)
+    shack.Run(":8080", r)
 }
 ```
 
 ### Multipart/Urlencoded Form
 ```go
 type forms struct {
-	Code int               `json:"code"`
-	Msg  string            `json:"msg"`
-	Data map[string]string `json:"data"`
+    Code int               `json:"code"`
+    Msg  string            `json:"msg"`
+    Data map[string]string `json:"data"`
 }
 
 func main() {
-	r := shack.NewRouter()
-	r.POST("/example", func(ctx *shack.Context) {
-		data := ctx.Form("data").Value()
+    r := shack.NewRouter()
+    r.POST("/example", func(ctx *shack.Context) {
+        data := ctx.Form("data").Value()
         
-		forms := &forms{}
-		ctx.Forms().Bind(forms, "json")
+        forms := &forms{}
+        ctx.Forms().Bind(forms, "json")
         
-		rest.Resp(ctx).Data(
-			"data", data,
-			"forms", forms,
-		).OK()
-	})
+        rest.Resp(ctx).Data(
+            "data", data,
+            "forms", forms,
+        ).OK()
+    })
 
-	shack.Run(":8080", r)
+    shack.Run(":8080", r)
 }
 ```
 
 ### Router group and middleware
 ```go
 func main() {
-	r := shack.NewRouter()
-	r.Use(forAll)
-	r.GET("/example", exampleHandler).With(middleware.AccessLog())
-	r.Group("/api", func(r *shack.Router) {
-		r.Use(onlyForApi)
-		r.Handle("/article", articleHandler)
-		
+    r := shack.NewRouter()
+    r.Use(forAll)
+    r.GET("/example", exampleHandler).With(middleware.AccessLog())
+    r.Group("/api", func(r *shack.Router) {
+        r.Use(onlyForApi)
+        r.Handle("/article", articleHandler)
+        
         r.Add(func(r *shack.Router) {
             r.Handle("/user", userHandler, http.MethodGet, http.MethodPost)
         })
-	})
-	
-	shack.Run(":8080", r)
+    })
+    
+    shack.Run(":8080", r)
 }
 ```
 
 ### Mount router
 ```go
 func main() {
-	r := shack.NewRouter()
-	r.Mount("/api", apiRouter())
-	
-	shack.Run(":8080", r)
+    r := shack.NewRouter()
+    r.Mount("/api", apiRouter())
+    
+    shack.Run(":8080", r)
 }
 
 func apiRouter() *shack.Router {
-	return shack.NewRouter()
+    return shack.NewRouter()
 }
 ```
 
@@ -157,15 +157,15 @@ func apiRouter() *shack.Router {
 ### Logger
 ```go
 func main() {
-	shack.Logger("example").
-		Level(shack.ErrorLevel).
-		Encoding("json").
-		Output("./logs").
-		Enable()
-	
-	shack.Log.Error("some error",
-		"timestamp", time.Now().Unix(),
-	)
+    shack.Logger("example").
+        Level(shack.ErrorLevel).
+        Encoding("json").
+        Output("./logs").
+        Enable()
+    
+    shack.Log.Error("some error",
+        "timestamp", time.Now().Unix(),
+    )
 }
 ```
 

@@ -75,10 +75,15 @@ type _Context interface {
 	Query(key string, defaultValue ...string) *valueFlow
 	RawQuery() *rawFlow
 
-	Set(key interface{}, value interface{})
-	Get(key interface{}) (value interface{}, ok bool)
-	Delete(key interface{})
+	Set(key string, value interface{})
+	Get(key string) (value interface{}, ok bool)
+	Delete(key string)
 
+	SetSync(key string, value interface{})
+	GetSync(key string) (value interface{}, ok bool)
+	DeleteSync(key string)
+
+	Error(err error)
 	Abort()
 	Next()
 }
