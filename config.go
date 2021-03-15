@@ -1,8 +1,11 @@
 package shack
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -77,32 +80,34 @@ func(cm *configManager) loadConfig() {
 }
 
 
-func(cm *configManager) getFieldValue(key string, rv reflect.Value) reflect.Value {
+func(cm *configManager) getFieldValue(key string, rv reflect.Value) (value reflect.Value, err error) {
 	switch rv.Kind() {
 	case reflect.String:
-		return reflect.ValueOf(cm.Core.GetString(key))
+		value = reflect.ValueOf(cm.Core.GetString(key))
 	case reflect.Slice:
 		switch reflect.TypeOf(rv.Interface()).Elem().Kind() {
 		case reflect.String:
-			return reflect.ValueOf(cm.Core.GetStringSlice(key))
+			value = reflect.ValueOf(cm.Core.GetStringSlice(key))
 		case reflect.Int:
-			return reflect.ValueOf(cm.Core.GetIntSlice(key))
+			value = reflect.ValueOf(cm.Core.GetIntSlice(key))
 		}
 	case reflect.Bool:
-		return reflect.ValueOf(cm.Core.GetBool(key))
+		value = reflect.ValueOf(cm.Core.GetBool(key))
 	case reflect.Int:
-		return reflect.ValueOf(cm.Core.GetInt(key))
+		value = reflect.ValueOf(cm.Core.GetInt(key))
 	case reflect.Int64:
-		return reflect.ValueOf(cm.Core.GetInt64(key))
+		value = reflect.ValueOf(cm.Core.GetInt64(key))
 	case reflect.Uint:
-		return reflect.ValueOf(cm.Core.GetUint(key))
+		value = reflect.ValueOf(cm.Core.GetUint(key))
 	case reflect.Uint64:
-		return reflect.ValueOf(cm.Core.GetUint64(key))
+		value = reflect.ValueOf(cm.Core.GetUint64(key))
 	case reflect.Float64:
-		return reflect.ValueOf(cm.Core.GetFloat64(key))
+		value = reflect.ValueOf(cm.Core.GetFloat64(key))
+	default:
+		err = errors.New("can't trans to the specify type")
 	}
 
-	return reflect.ValueOf(cm.Core.GetString(key))
+	return
 }
 
 
@@ -129,21 +134,38 @@ func(bc *BaseConfig) mapConfig() {
 			continue
 		}
 
+		var configField string
 		if mode != "release" {
-			configField := fmt.Sprintf("%s.%s.%s", bc.section, mode, structField.Name)
-			if Config.Core.IsSet(configField) {
-				rv.Field(i).Set(
-					Config.getFieldValue(configField, rv.Field(i)),
-				)
-				continue
-			}
+			configField = fmt.Sprintf("%s.%s.%s", bc.section, mode, humpTrans(structField.Name))
+		} else {
+			configField = fmt.Sprintf("%s.%s", bc.section, humpTrans(structField.Name))
 		}
 
-		configField := fmt.Sprintf("%s.%s", bc.section, structField.Name)
 		if Config.Core.IsSet(configField) {
-			rv.Field(i).Set(
-				Config.getFieldValue(configField, rv.Field(i)),
-			)
+			fieldValue, err := Config.getFieldValue(configField, rv.Field(i))
+			if err == nil {
+				rv.Field(i).Set(fieldValue)
+			}
 		}
 	}
+}
+
+
+func humpTrans(name string) string {
+	if len(name) == 0 {
+		return name
+	}
+
+	sb := &strings.Builder{}
+	sb.Write(bytes.ToLower([]byte{name[0]}))
+	for i := 1; i < len(name); i++ {
+		if name[i] >= 'A' && name[i] <= 'Z' {
+			sb.WriteString("_")
+			sb.Write([]byte{name[i] + ('a' - 'A')})
+			continue
+		}
+		sb.Write([]byte{name[i]})
+	}
+
+	return sb.String()
 }
