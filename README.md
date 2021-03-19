@@ -177,9 +177,10 @@ You can use it as follows:
 ```toml
 # conf.toml
 
-[App]
-Host = "0.0.0.0"
-Port = 8080
+[app]
+host    = "0.0.0.0"
+port    = 8080
+foo_bar = ["foo", "bar"]
 ```
 
 ```go
@@ -188,8 +189,9 @@ var AppConfig = &struct{
     // you have to combine shack.BaseConfig
     // in a struct.
     shack.BaseConfig
-    Host string
-    Port int
+    Host   string
+    Port   int
+    FooBar []string
 }
 
 func init() {
@@ -205,5 +207,6 @@ func main() {
 
     fmt.Println(AppConfig.Host)
     fmt.Println(AppConfig.Port)
+    fmt.Println(AppConfig.FooBar)
 }
 ```

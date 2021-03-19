@@ -57,7 +57,5 @@ func AccessLog(path ...string) shack.HandlerFunc {
 			zap.String("server_name", ctx.Request.URL.Host),
 			zap.Int64("bytes_received", ctx.Request.ContentLength),
 		)
-
-		ctx.Next()
 	}
 }
