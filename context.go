@@ -115,10 +115,10 @@ func(c *Context) Param(key string) string {
 }
 
 
-// Body returns a workflow of the request body.
-func(c *Context) Body() *bodyFlow {
+// BodyFlow returns the request body.
+func(c *Context) Body() []byte {
 	if len(c.bodyBuf) > 0 {
-		return newBodyFlow(c.bodyBuf)
+		return c.bodyBuf
 	}
 
 	buf, err := ioutil.ReadAll(c.Request.Body)
@@ -126,41 +126,70 @@ func(c *Context) Body() *bodyFlow {
 		c.bodyBuf = make([]byte, len(buf))
 		copy(c.bodyBuf, buf)
 	}
-	return newBodyFlow(buf)
+	return buf
 }
 
 
-// Form returns a workflow of the first value for the named component of the POST, PATCH, or PUT request body.
-func(c *Context) Form(key string) *valueFlow {
-	return newValueFlow(c.Request.PostFormValue(key))
+// BodyFlow returns a workflow of the request body.
+func(c *Context) BodyFlow() *bodyFlow {
+	return newBodyFlow(c.Body())
 }
 
 
-// Forms returns a workflow of all the values for the named component of the POST, PATCH, or PUT request body.
-func(c *Context) Forms() *formFlow {
+// Form returns the first value for the named component of the POST, PATCH, or PUT request body.
+func(c *Context) Form(key string) string {
+	return c.Request.PostFormValue(key)
+}
+
+
+// FormFlow returns a workflow of the first value for the named component of the POST, PATCH, or PUT request body.
+func(c *Context) FormFlow(key string) *valueFlow {
+	return newValueFlow(c.Form(key))
+}
+
+
+// Forms returns all the values for the named component of the POST, PATCH, or PUT request body.
+func(c *Context) Forms() map[string][]string {
 	err := c.Request.ParseMultipartForm(1024*1024*1024) // 10Mb
 	if err != nil {
-		return newFormFlow(nil)
+		return nil
 	}
-	return newFormFlow(c.Request.MultipartForm.Value)
+	return c.Request.MultipartForm.Value
+}
+
+
+// FormsFlow returns a workflow of all the values for the named component of the POST, PATCH, or PUT request body.
+func(c *Context) FormsFlow() *formFlow {
+	return newFormFlow(c.Forms())
 }
 
 
 // Query returns a workflow of the keyed url query value.
-func(c *Context) Query(key string, defaultValue ...string) *valueFlow {
+func(c *Context) Query(key string, defaultValue ...string) string {
 	value := c.Request.URL.Query().Get(key)
 	if value == "" && len(defaultValue) > 0 {
-		return newValueFlow(defaultValue[0])
+		return defaultValue[0]
 	}
 
-	return newValueFlow(value)
+	return value
 }
 
 
-// RawQuery returns a workflow of the url query values, without '?'.
-func(c *Context) RawQuery() *rawFlow {
-	f := newRawFlow(c.Request.URL.RawQuery)
-	return f
+// QueryFlow returns a workflow of the keyed url query value.
+func(c *Context) QueryFlow(key string, defaultValue ...string) *valueFlow {
+	return newValueFlow(c.Query(key, defaultValue...))
+}
+
+
+// RawQuery returns the url query values, without '?'.
+func(c *Context) RawQuery() string {
+	return c.Request.URL.RawQuery
+}
+
+
+// RawQueryFlow returns a workflow of the url query values, without '?'.
+func(c *Context) RawQueryFlow() *rawFlow {
+	return newRawFlow(c.RawQuery())
 }
 
 

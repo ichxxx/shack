@@ -55,11 +55,11 @@ type query struct {
 func main() {
     r := shack.NewRouter()
     r.GET("/example", func(ctx *shack.Context) {
-        foo := ctx.Query("foo").Int()
-        bar := ctx.Query("bar", "defaultBar").Value()
+        foo := ctx.QueryFlow("foo").Int()
+        bar := ctx.Query("bar", "defaultBar")
         
         query := &query{}
-        ctx.RawQuery().Bind(query, "json")
+        ctx.RawQueryFlow().Bind(query, "json")
         
         rest.Resp(ctx).Data(
             "foo", foo,
@@ -83,7 +83,7 @@ func main() {
     r := shack.NewRouter()
     r.GET("/example", func(ctx *shack.Context) {		
         query := &query{}
-        ctx.Body().BindJson(query)
+        ctx.BodyFlow().BindJson(query)
         
         rest.Resp(ctx).Data(
             "query", query,
@@ -105,10 +105,10 @@ type forms struct {
 func main() {
     r := shack.NewRouter()
     r.POST("/example", func(ctx *shack.Context) {
-        data := ctx.Form("data").Value()
+        data := ctx.Form("data")
         
         forms := &forms{}
-        ctx.Forms().Bind(forms, "json")
+        ctx.FormsFlow().Bind(forms, "json")
         
         rest.Resp(ctx).Data(
             "data", data,
