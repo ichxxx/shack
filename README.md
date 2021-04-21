@@ -176,10 +176,10 @@ You can use it as follows:
 
 ```toml
 # test_config.toml
-[Test]
-Name = "shack"
-Port = 8080
-FooBar = ["1", "2"]
+[test]
+name = "shack"
+port = 8080
+foo_bar = ["1", "2"]
 ```
 
 ```go

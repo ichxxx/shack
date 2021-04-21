@@ -9,7 +9,7 @@ type testConfig struct {
 	BaseConfig
 	Name    string
 	Port    int
-	FooBar  []int
+	FooBar  []int  `config:"foo_bar"`
 	Name2   string `json:"name"`
 	Port2   int    `json:"port"`
 	FooBar2 []int  `json:"foo_bar"`
