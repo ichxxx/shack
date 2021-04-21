@@ -1,7 +1,7 @@
 package rest
 
 import (
-	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/ichxxx/shack"
@@ -31,7 +31,7 @@ type restErr struct {
 
 
 func(e *restErr) MarshalJSON() ([]byte, error) {
-	return []byte(fmt.Sprintf("\"%s\"", e.Error())), nil
+	return []byte(strconv.Quote(e.Error())), nil
 }
 
 

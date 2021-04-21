@@ -175,38 +175,37 @@ Shack has a simple toml config parser built in.
 You can use it as follows:
 
 ```toml
-# conf.toml
-
-[app]
-host    = "0.0.0.0"
-port    = 8080
-foo_bar = ["foo", "bar"]
+# test_config.toml
+[Test]
+Name = "shack"
+Port = 8080
+FooBar = ["1", "2"]
 ```
 
 ```go
-var AppConfig = &struct{
+var TestConfig = &struct{
     // To use automatic parsing,
     // you have to combine shack.BaseConfig
     // in a struct.
     shack.BaseConfig
-    Host   string
-    Port   int
-    FooBar []string
+    Name    string
+    Port    string
+    FooBar  []int  `config:"foo_bar"`
+
 }
 
 func init() {
-    // The second args `App` is the section's name in the toml file.
-    shack.Config.Add(AppConfig, "App")
+    // The second args `test` is the section's name in the toml file.
+    shack.Config.Add(TestConfig, "test")
 }
 
 func main() {
-    shack.Config.File("conf.toml").Load()
+    shack.Config.File("test_config.toml").Load()
 
     // After that, shack will parse the config automatically.
     // You can just use it.
-
-    fmt.Println(AppConfig.Host)
-    fmt.Println(AppConfig.Port)
-    fmt.Println(AppConfig.FooBar)
+    fmt.Println(TestConfig.Name)
+    fmt.Println(TestConfig.Port)
+    fmt.Println(TestConfig.FooBar)
 }
 ```

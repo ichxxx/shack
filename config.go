@@ -1,17 +1,18 @@
 package shack
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"reflect"
 	"strings"
+	"unicode"
 
 	"github.com/spf13/viper"
 )
 
 var (
-	configFile = "config.toml"
+	tagParse   = "config"
+	configFile = "test_config.toml"
 	mode       string
 	Config     = &configManager{}
 )
@@ -51,9 +52,17 @@ func(cm *configManager) Add(config config, section string) {
 
 
 // File specify a toml file to load.
-// Default file is `config.toml`.
+// Default file is `test_config.toml`.
 func(cm *configManager) File(file string) *configManager {
 	configFile = file
+	return cm
+}
+
+
+// ParseTag specify the tag to parse the toml file.
+// Default tag is `config`.
+func(cm *configManager) ParseTag(tag string) *configManager {
+	tagParse = tag
 	return cm
 }
 
@@ -134,11 +143,15 @@ func(bc *BaseConfig) mapConfig() {
 			continue
 		}
 
-		var configField string
-		if mode != "release" {
-			configField = fmt.Sprintf("%s.%s.%s", bc.section, mode, humpTrans(structField.Name))
+		configField, _ := getConfigField(structField)
+		if configField == "-" {
+			continue
+		}
+
+		if mode != "" && mode != "release" {
+			configField = fmt.Sprintf("%s.%s.%s", bc.section, mode, configField)
 		} else {
-			configField = fmt.Sprintf("%s.%s", bc.section, humpTrans(structField.Name))
+			configField = fmt.Sprintf("%s.%s", bc.section, configField)
 		}
 
 		if Config.Core.IsSet(configField) {
@@ -151,21 +164,39 @@ func(bc *BaseConfig) mapConfig() {
 }
 
 
-func humpTrans(name string) string {
-	if len(name) == 0 {
-		return name
+func getConfigField(structField reflect.StructField) (name string, option string) {
+	tag := structField.Tag.Get(tagParse)
+	name, option = parseTag(tag)
+
+	if !isValidTag(name) {
+		return structField.Name, ""
 	}
 
-	sb := &strings.Builder{}
-	sb.Write(bytes.ToLower([]byte{name[0]}))
-	for i := 1; i < len(name); i++ {
-		if name[i] >= 'A' && name[i] <= 'Z' {
-			sb.WriteString("_")
-			sb.Write([]byte{name[i] + ('a' - 'A')})
-			continue
+	return
+}
+
+
+func parseTag(s string) (tag string, option string) {
+	if idx := strings.Index(s, ","); idx != -1 {
+		return tag[:idx], tag[idx+1:]
+	}
+	return s, ""
+}
+
+
+func isValidTag(s string) bool {
+	if s == "" {
+		return false
+	}
+	for _, c := range s {
+		switch {
+		case strings.ContainsRune("!#$%&()*+-./:<=>?@[]^_{|}~ ", c):
+			// Backslash and quote chars are reserved, but
+			// otherwise any punctuation chars are allowed
+			// in a tag name.
+		case !unicode.IsLetter(c) && !unicode.IsDigit(c):
+			return false
 		}
-		sb.Write([]byte{name[i]})
 	}
-
-	return sb.String()
+	return true
 }

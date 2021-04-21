@@ -1,0 +1,4 @@
+[Test]
+Name = "shack"
+Port = 8080
+FooBar = ["1", "2"]
