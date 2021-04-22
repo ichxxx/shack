@@ -85,7 +85,7 @@ func(cm *configManager) loadConfig() {
 		fmt.Printf("load config err: %s\n", err)
 	}
 
-	mode = cm.Core.GetString("app.mode")
+	mode = cm.Core.GetString("shack.mode")
 }
 
 
@@ -148,12 +148,17 @@ func(bc *BaseConfig) mapConfig() {
 			continue
 		}
 
-		if mode != "" && mode != "release" {
-			configField = fmt.Sprintf("%s.%s.%s", bc.section, mode, configField)
+		var prefix string
+		if mode != "" {
+			prefix = fmt.Sprintf("%s.%s.", bc.section, mode)
+			if !Config.Core.IsSet(prefix + configField) {
+				prefix = fmt.Sprintf("%s.", bc.section)
+			}
 		} else {
-			configField = fmt.Sprintf("%s.%s", bc.section, configField)
+			prefix = fmt.Sprintf("%s.", bc.section)
 		}
 
+		configField = prefix + configField
 		if Config.Core.IsSet(configField) {
 			fieldValue, err := Config.getFieldValue(configField, rv.Field(i))
 			if err == nil {
