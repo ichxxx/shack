@@ -115,7 +115,7 @@ func(c *Context) Param(key string) string {
 }
 
 
-// BodyFlow returns the request body.
+// Body returns the request body.
 func(c *Context) Body() []byte {
 	if len(c.bodyBuf) > 0 {
 		return c.bodyBuf
@@ -131,7 +131,7 @@ func(c *Context) Body() []byte {
 
 
 // BodyFlow returns a workflow of the request body.
-func(c *Context) BodyFlow() *bodyFlow {
+func(c *Context) BodyFlow() bodyFlow {
 	return newBodyFlow(c.Body())
 }
 
@@ -143,7 +143,7 @@ func(c *Context) Form(key string) string {
 
 
 // FormFlow returns a workflow of the first value for the named component of the POST, PATCH, or PUT request body.
-func(c *Context) FormFlow(key string) *valueFlow {
+func(c *Context) FormFlow(key string) valueFlow {
 	return newValueFlow(c.Form(key))
 }
 
@@ -159,7 +159,7 @@ func(c *Context) Forms() map[string][]string {
 
 
 // FormsFlow returns a workflow of all the values for the named component of the POST, PATCH, or PUT request body.
-func(c *Context) FormsFlow() *formFlow {
+func(c *Context) FormsFlow() formFlow {
 	return newFormFlow(c.Forms())
 }
 
@@ -176,7 +176,7 @@ func(c *Context) Query(key string, defaultValue ...string) string {
 
 
 // QueryFlow returns a workflow of the keyed url query value.
-func(c *Context) QueryFlow(key string, defaultValue ...string) *valueFlow {
+func(c *Context) QueryFlow(key string, defaultValue ...string) valueFlow {
 	return newValueFlow(c.Query(key, defaultValue...))
 }
 
@@ -188,7 +188,7 @@ func(c *Context) RawQuery() string {
 
 
 // RawQueryFlow returns a workflow of the url query values, without '?'.
-func(c *Context) RawQueryFlow() *rawFlow {
+func(c *Context) RawQueryFlow() rawFlow {
 	return newRawFlow(c.RawQuery())
 }
 

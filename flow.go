@@ -7,146 +7,116 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 )
 
-var (
-	rFlowPool = &sync.Pool{New: func() interface{}{return new(rawFlow)}}
-	vFlowPool = &sync.Pool{New: func() interface{}{return new(valueFlow)}}
-	bFlowPool = &sync.Pool{New: func() interface{}{return new(bodyFlow)}}
-	fFlowPool = &sync.Pool{New: func() interface{}{return new(formFlow)}}
+type (
+	rawFlow   string
+	valueFlow string
+	bodyFlow  []byte
+	formFlow  map[string][]string
 )
 
-type rawFlow struct {
-	value string
-}
 
-type valueFlow struct {
-	value string
-}
-
-type bodyFlow struct {
-	value []byte
-}
-
-type formFlow struct {
-	value map[string][]string
+func newRawFlow(value string) rawFlow {
+	value, _ = url.QueryUnescape(value)
+	return rawFlow(value)
 }
 
 
-func newRawFlow(value string) *rawFlow {
-	f := rFlowPool.Get().(*rawFlow)
-	rFlowPool.Put(f)
-	f.reset()
-	f.value, _ = url.QueryUnescape(value)
-	return f
+func newValueFlow(value string) valueFlow {
+	return valueFlow(value)
 }
 
 
-func newValueFlow(value string) *valueFlow {
-	f := vFlowPool.Get().(*valueFlow)
-	vFlowPool.Put(f)
-	f.reset()
-	f.value = value
-	return f
+func newBodyFlow(value []byte) bodyFlow {
+	return value
 }
 
 
-func newBodyFlow(value []byte) *bodyFlow {
-	f := bFlowPool.Get().(*bodyFlow)
-	bFlowPool.Put(f)
-	f.value = value
-	return f
-}
-
-
-func newFormFlow(value map[string][]string) *formFlow {
-	f := fFlowPool.Get().(*formFlow)
-	fFlowPool.Put(f)
-	f.value = value
-	return f
+func newFormFlow(value map[string][]string) formFlow {
+	return value
 }
 
 
 // Value returns the raw value of the workflow.
-func(f *rawFlow) Value() string {
-	return f.value
+func(f rawFlow) Value() string {
+	return string(f)
 }
 
 
 // Value returns the raw value of the workflow.
-func(f *valueFlow) Value() string {
-	return f.value
+func(f valueFlow) Value() string {
+	return string(f)
 }
 
 
 // Int trans the raw value to int.
-func(f *valueFlow) Int() int {
-	i, _ := strconv.Atoi(f.value)
+func(f valueFlow) Int() int {
+	i, _ := strconv.Atoi(f.Value())
 	return i
 }
 
 
 // Int64 trans the raw value to int64.
-func(f *valueFlow) Int64() int64 {
+func(f valueFlow) Int64() int64 {
 	return int64(f.Int())
 }
 
 
 // Int8 trans the raw value to int8.
-func(f *valueFlow) Int8() int8 {
+func(f valueFlow) Int8() int8 {
 	return int8(f.Int())
 }
 
 
 // Float64 trans the raw value to float64.
-func(f *valueFlow) Float64() float64 {
-	f64, _ := strconv.ParseFloat(f.value, 64)
+func(f valueFlow) Float64() float64 {
+	f64, _ := strconv.ParseFloat(f.Value(), 64)
 	return f64
 }
 
 
 // Bool trans the raw value to bool.
-func(f *valueFlow) Bool() bool {
-	b, _ := strconv.ParseBool(f.value)
+func(f valueFlow) Bool() bool {
+	b, _ := strconv.ParseBool(f.Value())
 	return b
 }
 
 
 // Value returns the raw value of the workflow.
-func(f *bodyFlow) Value() []byte {
-	return f.value
+func(f bodyFlow) Value() []byte {
+	return f
 }
 
 
 // Value returns the raw value of the workflow.
-func(f *formFlow) Value() map[string][]string {
-	return f.value
+func(f formFlow) Value() map[string][]string {
+	return f
 }
 
 
 // BindJson binds the passed struct pointer with the raw value parsed to json.
-func(f *valueFlow) BindJson(dst interface{}) error {
-	return json.Unmarshal([]byte(f.value), dst)
+func(f valueFlow) BindJson(dst interface{}) error {
+	return json.Unmarshal([]byte(f), dst)
 }
 
 
 // BindJson binds the passed struct pointer with the raw value parsed to json.
-func(f *bodyFlow) BindJson(dst interface{}) error {
-	return json.Unmarshal(f.value, dst)
+func(f bodyFlow) BindJson(dst interface{}) error {
+	return json.Unmarshal(f, dst)
 }
 
 
 // Bind binds the passed struct pointer with the raw value parsed by the given tag.
 // If the tag isn't given, it will parse according to key's name.
-func(f *rawFlow) Bind(dst interface{}, tag ...string) error {
+func(f rawFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
 		return errors.New("dst must be a pointer")
 	}
 
 	m := make(map[string]string)
-	segments := strings.Split(f.value, "&")
+	segments := strings.Split(f.Value(), "&")
 	for _, segment := range segments {
 		kv := strings.Split(segment, "=")
 		if len(kv) > 1 {
@@ -160,14 +130,14 @@ func(f *rawFlow) Bind(dst interface{}, tag ...string) error {
 
 // Bind binds the passed struct pointer with the raw value parsed by the given tag.
 // If the tag isn't given, it will parse according to key's name.
-func(f *formFlow) Bind(dst interface{}, tag ...string) error {
+func(f formFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
 		return errors.New("dst is not a pointer")
 	}
 
 	m := map[string]string{}
-	for k, v := range f.value {
+	for k, v := range f {
 		m[k] = v[0]
 	}
 
@@ -175,16 +145,16 @@ func(f *formFlow) Bind(dst interface{}, tag ...string) error {
 }
 
 
-func(f *rawFlow) reset() {}
+func(f rawFlow) reset() {}
 
 
-func(f *valueFlow) reset() {}
+func(f valueFlow) reset() {}
 
 
-func(f *bodyFlow) reset() {}
+func(f bodyFlow) reset() {}
 
 
-func(f *formFlow) reset() {}
+func(f formFlow) reset() {}
 
 
 func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {

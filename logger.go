@@ -78,7 +78,7 @@ func(l *logger) Level(level int8) *logger {
 }
 
 
-// Level sets the encoding ( `json` or `console` ) of logger.
+// Encoding sets the encoding ( `json` or `console` ) of logger.
 // The default encoding is `json`.
 func(l *logger) Encoding(encoding string) *logger {
 	l.encoding = encoding
