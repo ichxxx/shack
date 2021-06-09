@@ -51,7 +51,7 @@ func TestTrie(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		handlers, param, ok := trie.search(test.method, test.path)
+		handlers, param, ok := trie.search([]byte(test.method), []byte(test.path))
 		if handler := popHandler(handlers); fmt.Sprintf("%v", handler) != fmt.Sprintf("%v", test.handler) {
 			t.Errorf("input [%d]: expecting handler:%v, got:%v", i, test.handler, handler)
 		}

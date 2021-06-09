@@ -24,8 +24,6 @@ func main() {
     }).With(middleware.Recovery())
 
     shack.Run(":8080", r)
-    // or
-    // http.ListenAndServe(":8080", r)
 }
 ```
 

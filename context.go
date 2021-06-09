@@ -2,37 +2,36 @@ package shack
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"log"
 	"math"
-	"net/http"
 	"strings"
 	"sync"
 	"unsafe"
+
+	"github.com/valyala/fasthttp"
 )
 
 type Context struct {
-	HttpStatusCode int
+	index          int8
+	HttpStatusCode int16
 	StatusCode     *int
-	Writer         http.ResponseWriter
-	Request        *http.Request
+	HttpCtx        *fasthttp.RequestCtx
+	uri            *fasthttp.URI
 	Params         map[string]string
 	Bucket         map[string]interface{}
 	SyncBucket     *sync.Map
-	Err            error
 	errOnce        *sync.Once
+	Err            error
 	bodyBuf        []byte
 	handlers       []HandlerFunc
-	index          int8
 }
 
 const abortIndex int8 = math.MaxInt8 / 2
 
 
-func newContext(w http.ResponseWriter, r *http.Request) *Context {
+func newContext(httpCtx *fasthttp.RequestCtx) *Context {
 	return &Context{
-		Writer : w,
-		Request: r,
+		HttpCtx: httpCtx,
 		index  : -1,
 	}
 }
@@ -41,7 +40,7 @@ func newContext(w http.ResponseWriter, r *http.Request) *Context {
 // String writes string to http.ResponseWriter.
 func(c *Context) String(s ...string) *Context {
 	c.Header("Content-Type", "text/plain")
-	_, err := c.Writer.Write(bytesFromString(strings.Join(s, "")))
+	_, err := c.HttpCtx.Write(bytesFromString(strings.Join(s, "")))
 	if err != nil {
 		log.Printf("shack: ResponseWriter write error, %s", err.Error())
 	}
@@ -55,7 +54,7 @@ func(c *Context) JSON(data interface{}) *Context {
 	c.Header("Content-Type", "application/json")
 
 	if b, ok := getBytes(data); ok {
-		_, err := c.Writer.Write(b)
+		_, err := c.HttpCtx.Write(b)
 		if err != nil {
 			log.Printf("shack: ResponseWriter write error, %s", err.Error())
 		}
@@ -66,7 +65,7 @@ func(c *Context) JSON(data interface{}) *Context {
 	if err != nil {
 		log.Printf("shack: marshal json error, %s", err.Error())
 	}
-	_, err = c.Writer.Write(b)
+	_, err = c.HttpCtx.Write(b)
 	if err != nil {
 		log.Printf("shack: ResponseWriter write error, %s", err.Error())
 	}
@@ -76,7 +75,7 @@ func(c *Context) JSON(data interface{}) *Context {
 
 // Data writes data to http.ResponseWriter.
 func (c *Context) Data(data []byte) *Context {
-	_, err := c.Writer.Write(data)
+	_, err := c.HttpCtx.Write(data)
 	if err != nil {
 		log.Printf("shack: ResponseWriter write error, %s", err.Error())
 	}
@@ -96,15 +95,25 @@ func(c *Context) HttpStatus(code int) *Context {
 	if code < 100 || code > 500 {
 		return c
 	}
-	c.HttpStatusCode = code
-	c.Writer.WriteHeader(code)
+	c.HttpStatusCode = int16(code)
+	c.HttpCtx.SetStatusCode(code)
 	return c
 }
 
 
+// URI returns requested uri.
+func(c *Context) URI() *fasthttp.URI {
+	if c.uri == nil {
+		c.uri = c.HttpCtx.URI()
+	}
+	return c.uri
+}
+
+
+
 // Header sets the header of response.
 func(c *Context) Header(key string, value string) *Context {
-	c.Writer.Header().Set(key, value)
+	c.HttpCtx.Response.Header.Set(key, value)
 	return c
 }
 
@@ -121,8 +130,8 @@ func(c *Context) Body() []byte {
 		return c.bodyBuf
 	}
 
-	buf, err := ioutil.ReadAll(c.Request.Body)
-	if err == nil {
+	buf := c.HttpCtx.PostBody()
+	if c.bodyBuf == nil || len(c.bodyBuf) == 0 {
 		c.bodyBuf = make([]byte, len(buf))
 		copy(c.bodyBuf, buf)
 	}
@@ -136,9 +145,9 @@ func(c *Context) BodyFlow() bodyFlow {
 }
 
 
-// Form returns the first value for the named component of the POST, PATCH, or PUT request body.
+// Form returns the first value for the named component of the POST or PUT request body.
 func(c *Context) Form(key string) string {
-	return c.Request.PostFormValue(key)
+	return stringFromBytes(c.HttpCtx.FormValue(key))
 }
 
 
@@ -150,11 +159,11 @@ func(c *Context) FormFlow(key string) valueFlow {
 
 // Forms returns all the values for the named component of the POST, PATCH, or PUT request body.
 func(c *Context) Forms() map[string][]string {
-	err := c.Request.ParseMultipartForm(1024*1024*1024) // 10Mb
+	forms, err := c.HttpCtx.MultipartForm()
 	if err != nil {
 		return nil
 	}
-	return c.Request.MultipartForm.Value
+	return forms.Value
 }
 
 
@@ -166,12 +175,12 @@ func(c *Context) FormsFlow() formFlow {
 
 // Query returns a workflow of the keyed url query value.
 func(c *Context) Query(key string, defaultValue ...string) string {
-	value := c.Request.URL.Query().Get(key)
-	if value == "" && len(defaultValue) > 0 {
+	value := c.HttpCtx.QueryArgs().Peek(key)
+	if len(value) == 0 && len(defaultValue) > 0 {
 		return defaultValue[0]
 	}
 
-	return value
+	return string(value)
 }
 
 
@@ -183,7 +192,7 @@ func(c *Context) QueryFlow(key string, defaultValue ...string) valueFlow {
 
 // RawQuery returns the url query values, without '?'.
 func(c *Context) RawQuery() string {
-	return c.Request.URL.RawQuery
+	return string(c.HttpCtx.Request.URI().QueryString())
 }
 
 
@@ -294,4 +303,9 @@ func bytesFromString(s string) []byte {
 	tmp := (*[2]uintptr)(unsafe.Pointer(&s))
 	x := [3]uintptr{tmp[0], tmp[1], tmp[1]}
 	return *(*[]byte)(unsafe.Pointer(&x))
+}
+
+
+func stringFromBytes(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

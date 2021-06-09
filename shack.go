@@ -3,12 +3,17 @@ package shack
 import (
 	"fmt"
 	"net/http"
+
+	jsoniter "github.com/json-iterator/go"
+	"github.com/valyala/fasthttp"
 )
+
+var json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type M map[string]interface{}
 
 func Run(addr string, router *Router) {
-	err := http.ListenAndServe(addr, router)
+	err := fasthttp.ListenAndServe(addr, router.ServeHTTP)
 	if err != nil {
 		panic(fmt.Sprint("shack: ", err))
 	}

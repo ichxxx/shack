@@ -116,12 +116,12 @@ func(t *trie) insert(path string, handler HandlerFunc, methods ...string) *trie 
 }
 
 
-func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[string]string, ok bool) {
+func(t *trie) search(method, path []byte) (handlers []HandlerFunc, params map[string]string, ok bool) {
 	i := 1
 	var splitLoc int
 	for ; i < len(path); i++ {
 		if path[i] == '/' {
-			next := t.next(path[splitLoc+1:i])
+			next := t.next(stringFromBytes(path[splitLoc+1:i]))
 			if next == nil {
 				return
 			}
@@ -131,7 +131,7 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = path[splitLoc:]
+				params[t.p] = stringFromBytes(path[splitLoc:])
 				break
 			}
 
@@ -139,7 +139,7 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = path[splitLoc+1:i]
+				params[t.p] = stringFromBytes(path[splitLoc+1:i])
 			}
 
 			splitLoc = i
@@ -147,7 +147,7 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 	}
 
 	if i > 1 && !t.isPath {
-		next := t.next(path[splitLoc+1:i])
+		next := t.next(stringFromBytes(path[splitLoc+1:i]))
 		if next == nil {
 			return
 		}
@@ -158,10 +158,10 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 		if params == nil {
 			params = make(map[string]string)
 		}
-		params[t.p] = path[splitLoc+1:i]
+		params[t.p] = stringFromBytes(path[splitLoc+1:i])
 	}
 
-	handlers = t.handlers[method]
+	handlers = t.handlers[stringFromBytes(method)]
 	if handlers == nil {
 		handlers = t.handlers[_ALL]
 	}

@@ -1,7 +1,6 @@
 package shack
 
 import (
-	"net/http/httptest"
 	"testing"
 )
 
@@ -12,9 +11,10 @@ func TestLogger(t *testing.T) {
 		Log.Info("logger test")
 		ctx.String("logger")
 	})
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-	request(t, ts, "GET", "/logger", nil)
+
+	go Run(":8080", r)
+
+	request(t, "127.0.0.1:8080", "GET", "/logger", nil)
 	Logger("shack").Encoding("JSON").Output("./logs").Enable()
-	request(t, ts, "GET", "/logger", nil)
+	request(t, "127.0.0.1:8080", "GET", "/logger", nil)
 }

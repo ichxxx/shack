@@ -1,9 +1,24 @@
 package shack
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
+	"unsafe"
 )
+
+func TestName(t *testing.T) {
+	var a int16 = 1
+	ctx1 := Context{}
+	fmt.Printf("part1 size: %d, align: %d\n", unsafe.Sizeof(ctx1), unsafe.Alignof(ctx1))
+	fmt.Printf("*int16 size: %d\n", unsafe.Sizeof(&a))
+	fmt.Printf("int16 size: %d\n", unsafe.Sizeof(int16(1)))
+	fmt.Printf("int8 size: %d\n", unsafe.Sizeof(int8(1)))
+	fmt.Printf("[]HandlerFunc size: %d\n", unsafe.Sizeof([]HandlerFunc{}))
+	fmt.Printf("[]byte size: %d\n", unsafe.Sizeof([]byte{}))
+	fmt.Printf("error size: %d\n", unsafe.Sizeof(errors.New("1")))
+}
 
 
 func TestFormFlowBind(t *testing.T) {

@@ -4,7 +4,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/ichxxx/shack"
@@ -24,9 +23,8 @@ func panicHandler(ctx *shack.Context) {
 func TestRecovery(t *testing.T) {
 	r := shack.NewRouter()
 	r.GET("/panic", panicHandler).With(Recovery())
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-	request(t, ts, "GET", "/panic", nil)
+	go shack.Run(":8080", r)
+	request(t, "127.0.0.1:8080", "GET", "/panic", nil)
 }
 
 
@@ -35,14 +33,13 @@ func TestAccessLog(t *testing.T) {
 	r.GET("/access", func(ctx *shack.Context) {
 		ctx.String("access")
 	}).With(AccessLog())
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-	request(t, ts, "GET", "/access", nil)
+	go shack.Run(":8080", r)
+	request(t, "127.0.0.1:8080", "GET", "/access", nil)
 }
 
 
-func request(t *testing.T, ts *httptest.Server, method, path string, body io.Reader) (*http.Response, string) {
-	req, err := http.NewRequest(method, ts.URL+path, body)
+func request(t *testing.T, url, method, path string, body io.Reader) (*http.Response, string) {
+	req, err := http.NewRequest(method, url+path, body)
 	if err != nil {
 		t.Fatal(err)
 		return nil, ""

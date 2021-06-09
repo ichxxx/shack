@@ -12,7 +12,7 @@ import (
 
 var (
 	tagParse   = "config"
-	configFile = "test_config.toml"
+	configFile = "config.toml"
 	mode       string
 	Config     = &configManager{}
 )

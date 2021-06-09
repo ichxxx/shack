@@ -1,7 +1,6 @@
 package shack
 
 import (
-	"net/http/httptest"
 	"testing"
 )
 
@@ -18,9 +17,9 @@ func TestContextAbort(t *testing.T) {
 		ctx.String("hello")
 	}).With(abortHandler)
 
-	ts := httptest.NewServer(r)
-	defer ts.Close()
-	if _, body := request(t, ts, "GET", "/abort", nil); body != "abort" {
+	go Run(":8080", r)
+
+	if _, body := request(t, "127.0.0.1:8080", "GET", "/abort", nil); body != "abort" {
 		t.Fatalf(body)
 	}
 }

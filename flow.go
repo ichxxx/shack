@@ -1,7 +1,6 @@
 package shack
 
 import (
-	"encoding/json"
 	"errors"
 	"net/url"
 	"reflect"
@@ -143,18 +142,6 @@ func(f formFlow) Bind(dst interface{}, tag ...string) error {
 
 	return mapTo(reflect.Indirect(p), m, tag...)
 }
-
-
-func(f rawFlow) reset() {}
-
-
-func(f valueFlow) reset() {}
-
-
-func(f bodyFlow) reset() {}
-
-
-func(f formFlow) reset() {}
 
 
 func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {

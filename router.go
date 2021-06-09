@@ -1,9 +1,12 @@
 package shack
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"strings"
+
+	"github.com/valyala/fasthttp"
 )
 
 
@@ -17,6 +20,9 @@ const (
 	_HEAD    = http.MethodHead
 	_ALL     = "ALL"
 )
+
+var sepBytes = []byte("/")
+
 
 type HandlerFunc func(*Context)
 
@@ -37,24 +43,24 @@ func NewRouter() *Router {
 }
 
 
-func(r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	c := newContext(w, req)
-	c.handlers = append(c.handlers, getGroupMiddlewares(r, c.Request.URL.Path)...)
+func(r *Router) ServeHTTP(ctx *fasthttp.RequestCtx) {
+	c := newContext(ctx)
+	c.handlers = append(c.handlers, getGroupMiddlewares(r, c.URI().Path())...)
 	r.handler(c)
 }
 
 
-func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
+func getGroupMiddlewares(r *Router, path []byte) (middlewares []HandlerFunc) {
 	middlewares = append(middlewares, r.groupMiddlewares...)
-	if path == "/" {
+	if len(path) <= 0 || bytes.Equal(path, sepBytes) {
 		return
 	}
 
 	path = path[1:]
 	for pattern, router := range r.sub {
-		if strings.HasPrefix(path, pattern) {
-			nextPath := strings.TrimPrefix(path, pattern)
-			if nextPath != "" {
+		if patternBytes := bytesFromString(pattern); bytes.HasPrefix(path, patternBytes) {
+			nextPath := bytes.TrimPrefix(path, patternBytes)
+			if len(nextPath) > 0 {
 				middlewares = append(middlewares, getGroupMiddlewares(router, nextPath)...)
 			}
 		}
@@ -64,7 +70,7 @@ func getGroupMiddlewares(r *Router, path string) (middlewares []HandlerFunc) {
 
 
 func(r *Router) handler(ctx *Context) {
-	handlers, params, ok := r.trie.search(ctx.Request.Method, ctx.Request.URL.Path)
+	handlers, params, ok := r.trie.search(ctx.HttpCtx.Method(), ctx.URI().Path())
 	if ok && len(handlers) > 0  {
 		ctx.Params = params
 		ctx.handlers = append(ctx.handlers, handlers...)
