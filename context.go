@@ -1,7 +1,6 @@
 package shack
 
 import (
-	"encoding/json"
 	"log"
 	"math"
 	"strings"
