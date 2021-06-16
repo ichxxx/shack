@@ -60,7 +60,7 @@ func(c *Context) JSON(data interface{}) *Context {
 		return c
 	}
 
-	b, err := json.Marshal(data)
+	b, err := Json.Marshal(data)
 	if err != nil {
 		log.Printf("shack: marshal json error, %s", err.Error())
 	}

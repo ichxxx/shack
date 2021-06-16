@@ -6,11 +6,10 @@ import (
 
 	"github.com/ichxxx/shack"
 	"github.com/ichxxx/shack/util"
-	jsoniter "github.com/json-iterator/go"
 )
 
 var (
-	json     = jsoniter.ConfigCompatibleWithStandardLibrary
+	json     = shack.Json
 	okC      = 0
 	okM      = "success"
 	failC    = 1

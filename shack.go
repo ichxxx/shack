@@ -8,7 +8,7 @@ import (
 	"github.com/valyala/fasthttp"
 )
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+var Json = jsoniter.ConfigCompatibleWithStandardLibrary
 
 type M map[string]interface{}
 

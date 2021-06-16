@@ -1,7 +1,6 @@
 package rest
 
 import (
-	"encoding/json"
 	"errors"
 	"io"
 	"io/ioutil"

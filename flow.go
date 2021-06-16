@@ -96,13 +96,13 @@ func(f formFlow) Value() map[string][]string {
 
 // BindJson binds the passed struct pointer with the raw value parsed to json.
 func(f valueFlow) BindJson(dst interface{}) error {
-	return json.Unmarshal([]byte(f), dst)
+	return Json.Unmarshal([]byte(f), dst)
 }
 
 
 // BindJson binds the passed struct pointer with the raw value parsed to json.
 func(f bodyFlow) BindJson(dst interface{}) error {
-	return json.Unmarshal(f, dst)
+	return Json.Unmarshal(f, dst)
 }
 
 
