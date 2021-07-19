@@ -111,7 +111,7 @@ func(f bodyFlow) BindJson(dst interface{}) error {
 func(f rawFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
-		return errors.New("dst must be a pointer")
+		return errors.New("shack: raw flow bind error, dst must be a pointer")
 	}
 
 	m := make(map[string]string)
@@ -132,7 +132,7 @@ func(f rawFlow) Bind(dst interface{}, tag ...string) error {
 func(f formFlow) Bind(dst interface{}, tag ...string) error {
 	p := reflect.ValueOf(dst)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
-		return errors.New("dst is not a pointer")
+		return errors.New("shack: form flow bind error, dst must be a pointer")
 	}
 
 	m := map[string]string{}
@@ -146,7 +146,7 @@ func(f formFlow) Bind(dst interface{}, tag ...string) error {
 
 func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 	if rv.Kind() != reflect.Struct && rv.IsNil() {
-		return errors.New("dst is nil")
+		return errors.New("shack: map value error, dst is nil")
 	}
 
 	switch rv.Kind() {
@@ -161,7 +161,7 @@ func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 			t := rv.Type()
 			size := rv.NumField()
 			if size == 0 {
-				return errors.New("dst struct doesn't have any fields")
+				return errors.New("shack: map error, dst struct doesn't have any fields")
 			}
 
 			fieldLoop:

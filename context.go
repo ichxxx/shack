@@ -21,7 +21,6 @@ type Context struct {
 	SyncBucket     *sync.Map
 	errOnce        *sync.Once
 	Err            error
-	bodyBuf        []byte
 	handlers       []HandlerFunc
 }
 
@@ -125,16 +124,7 @@ func(c *Context) Param(key string) string {
 
 // Body returns the request body.
 func(c *Context) Body() []byte {
-	if len(c.bodyBuf) > 0 {
-		return c.bodyBuf
-	}
-
-	buf := c.HttpCtx.PostBody()
-	if c.bodyBuf == nil || len(c.bodyBuf) == 0 {
-		c.bodyBuf = make([]byte, len(buf))
-		copy(c.bodyBuf, buf)
-	}
-	return buf
+	return c.HttpCtx.PostBody()
 }
 
 

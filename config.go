@@ -13,7 +13,6 @@ import (
 var (
 	tagParse   = "config"
 	configFile = "config.toml"
-	mode       string
 	Config     = &configManager{}
 )
 
@@ -52,7 +51,7 @@ func(cm *configManager) Add(config config, section string) {
 
 
 // File specify a toml file to load.
-// Default file is `test_config.toml`.
+// Default file is `config.toml`.
 func(cm *configManager) File(file string) *configManager {
 	configFile = file
 	return cm
@@ -84,8 +83,6 @@ func(cm *configManager) loadConfig() {
 	if err != nil {
 		fmt.Printf("load config err: %s\n", err)
 	}
-
-	mode = cm.Core.GetString("shack.mode")
 }
 
 
@@ -113,7 +110,7 @@ func(cm *configManager) getFieldValue(key string, rv reflect.Value) (value refle
 	case reflect.Float64:
 		value = reflect.ValueOf(cm.Core.GetFloat64(key))
 	default:
-		err = errors.New("can't trans to the specify type")
+		err = errors.New("shack: parse config error, can't trans value to the specify type")
 	}
 
 	return
@@ -148,17 +145,7 @@ func(bc *BaseConfig) mapConfig() {
 			continue
 		}
 
-		var prefix string
-		if mode != "" {
-			prefix = fmt.Sprintf("%s.%s.", bc.section, mode)
-			if !Config.Core.IsSet(prefix + configField) {
-				prefix = fmt.Sprintf("%s.", bc.section)
-			}
-		} else {
-			prefix = fmt.Sprintf("%s.", bc.section)
-		}
-
-		configField = prefix + configField
+		configField = bc.section + "." + configField
 		if Config.Core.IsSet(configField) {
 			fieldValue, err := Config.getFieldValue(configField, rv.Field(i))
 			if err == nil {
