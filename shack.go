@@ -1,25 +1,77 @@
 package shack
 
 import (
-	"fmt"
+	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/valyala/fasthttp"
+	"golang.org/x/sync/errgroup"
 )
 
-var Json = jsoniter.ConfigCompatibleWithStandardLibrary
+var (
+	Json = jsoniter.ConfigCompatibleWithStandardLibrary
+	server = make(map[string]*fasthttp.Server)
+	serverMutex = sync.RWMutex{}
+)
 
 type M map[string]interface{}
 
-func Run(addr string, router *Router) {
-	err := fasthttp.ListenAndServe(addr, router.ServeHTTP)
-	if err != nil {
-		panic(fmt.Sprint("shack: ", err))
+func Run(addr string, router *Router) error {
+	s := &fasthttp.Server{
+		Handler: router.ServeHTTP,
 	}
-	return
+	serverMutex.Lock()
+	server[addr] = s
+	serverMutex.Unlock()
+
+	go func() {
+		<- listenShutdown()
+		shutdown(s)
+	}()
+
+	return s.ListenAndServe(addr)
 }
 
+func Stop(addr... string) error {
+	errGroup := errgroup.Group{}
+	serverMutex.RLock()
+	if len(addr) > 0 {
+		for _, a := range addr {
+			_addr := a
+			errGroup.Go(func() error {
+				return server[_addr].Shutdown()
+			})
+		}
+	} else {
+		for _, s := range server {
+			_server := s
+			errGroup.Go(func() error {
+				return _server.Shutdown()
+			})
+		}
+	}
+	serverMutex.RUnlock()
+	return errGroup.Wait()
+}
+
+func listenShutdown() <- chan os.Signal {
+	shutdownSignal := make(chan os.Signal, 1)
+	signal.Notify(shutdownSignal, syscall.SIGINT, syscall.SIGKILL, syscall.SIGTERM, syscall.SIGQUIT)
+	return shutdownSignal
+}
+
+func shutdown(server *fasthttp.Server) {
+	err := server.Shutdown()
+	if err != nil {
+		log.Println("shack: server shutdown failed,", err.Error())
+	}
+	log.Println("shack: shutdown")
+}
 
 // Logger returns a logger by specify a name
 func Logger(name string) *logger {
@@ -49,6 +101,7 @@ type _Router interface {
 	MethodNotAllowed(handler HandlerFunc)
 }
 
+
 type _Logger interface {
 	Enable()
 
@@ -64,6 +117,7 @@ type _Logger interface {
 	Panic(msg string, keyAndValues ...interface{})
 	Fatal(msg string, keyAndValues ...interface{})
 }
+
 
 type _Context interface {
 	Status(code int) *Context

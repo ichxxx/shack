@@ -18,6 +18,7 @@ type Context struct {
 	uri            *fasthttp.URI
 	Params         map[string]string
 	Bucket         map[string]interface{}
+	bodyJson       map[string]interface{}
 	SyncBucket     *sync.Map
 	errOnce        *sync.Once
 	Err            error
@@ -131,6 +132,16 @@ func(c *Context) Body() []byte {
 // BodyFlow returns a workflow of the request body.
 func(c *Context) BodyFlow() bodyFlow {
 	return newBodyFlow(c.Body())
+}
+
+
+func(c *Context) GetJson(key string) (interface{}, bool) {
+	if c.bodyJson == nil {
+		c.bodyJson = make(map[string]interface{})
+		Json.Unmarshal(c.Body(), &c.bodyJson)
+	}
+	value, ok := c.bodyJson[key]
+	return value, ok
 }
 
 
