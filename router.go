@@ -72,6 +72,10 @@ func (r *Router) handler(ctx *Context) {
 	}
 }
 
+func (r *Router) Handle(pattern string, handler Handler) *trie {
+	return r.trie.insert(pattern, handler, _ALL)
+}
+
 func (r *Router) GET(pattern string, handler Handler) *trie {
 	return r.trie.insert(pattern, handler, _GET)
 }

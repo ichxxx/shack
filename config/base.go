@@ -10,6 +10,8 @@ var (
 	defaultTag  = "config"
 	defaultFile = "config.yaml"
 	manager     = &configManager{
+		file:    defaultFile,
+		tag:     defaultTag,
 		configs: map[string]config{},
 	}
 )
@@ -22,12 +24,17 @@ type Base struct {
 
 type config interface {
 	Init()
-	Set(key string, value interface{})
+	Get(key string) interface{}
+	Set(key string, value interface{}) error
 	bind(config, string)
 	mapConfig()
 }
 
 func (b *Base) Init() {}
+
+func (b *Base) Get(key string) interface{} {
+	return manager.core.Get(b.section + "." + key)
+}
 
 func (b *Base) Set(key string, value interface{}) error {
 	manager.mutex.Lock()
@@ -61,7 +68,7 @@ func (b *Base) mapConfig() {
 
 	for i := 0; i < size; i++ {
 		structField := t.Field(i)
-		if sFieldKind := structField.Type.Kind(); sFieldKind == reflect.Struct || sFieldKind == reflect.Map {
+		if sFieldKind := structField.Type.Kind(); sFieldKind == reflect.Struct {
 			continue
 		}
 

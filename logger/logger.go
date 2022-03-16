@@ -120,13 +120,11 @@ func (l *logger) EncodeConsole() *logger {
 }
 
 // WithFile sets the output file of logger.
-// The default output path is `./logs`.
 func WithFile(path string) *logger {
 	return log.WithFile(path)
 }
 
 // WithFile sets the output file of logger.
-// The default output path is `./logs`.
 func (l *logger) WithFile(path string) *logger {
 	l.outputFile = true
 	l.outputFilePath = path

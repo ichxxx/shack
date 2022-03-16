@@ -2,17 +2,33 @@ package config
 
 import (
 	"errors"
+	"flag"
 	"fmt"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/spf13/viper"
 )
 
 type configManager struct {
+	file    string
+	tag     string
 	core    *viper.Viper
 	configs map[string]config
 	mutex   sync.Mutex
+}
+
+var Core *viper.Viper
+
+func ParseFlag(name string) *configManager {
+	return manager.ParseFlag(name)
+}
+
+func (cm *configManager) ParseFlag(name string) *configManager {
+	flag.StringVar(&defaultFile, name, "-c", "配置文件路径")
+	flag.Parse()
+	return cm
 }
 
 // Add adds a config will be loaded.
@@ -21,46 +37,69 @@ func Add(config config, section string) {
 	manager.configs[section] = config
 }
 
+func (cm *configManager) Add(config config, section string) {
+	config.bind(config, section)
+	cm.configs[section] = config
+}
+
 // File specify a config file to load.
-// Default file is `config.yml`.
+// Default file is `config.yaml`.
 func File(file string) *configManager {
-	defaultFile = file
-	return manager
+	return manager.File(file)
+}
+
+func (cm *configManager) File(file string) *configManager {
+	cm.file = file
+	return cm
 }
 
 // ParseTag specify the tag to parse the config file.
 // Default tag is `config`.
 func ParseTag(tag string) *configManager {
-	defaultTag = tag
-	return manager
+	return manager.ParseTag(tag)
+}
+
+func (cm *configManager) ParseTag(tag string) *configManager {
+	cm.tag = tag
+	return cm
 }
 
 // Load loads the previously added configs from the config file.
 func Load() {
-	manager.mutex.Lock()
-	defer manager.mutex.Unlock()
+	manager.Load()
+}
 
-	manager.loadConfig()
-	for _, c := range manager.configs {
+func (cm *configManager) Load() {
+	cm.mutex.Lock()
+	defer cm.mutex.Unlock()
+
+	cm.loadConfig()
+	for _, c := range cm.configs {
 		c.mapConfig()
 	}
-	for _, c := range manager.configs {
+	for _, c := range cm.configs {
 		c.Init()
 	}
 }
 
-func Options(opts ...func(v *viper.Viper)) {
+func Options(opts ...func(v *viper.Viper)) *configManager {
+	return manager.Options(opts...)
+}
+
+func (cm *configManager) Options(opts ...func(v *viper.Viper)) *configManager {
 	for _, opt := range opts {
-		opt(manager.core)
+		opt(cm.core)
 	}
+	return cm
 }
 
 func (cm *configManager) loadConfig() {
-	cm.core = viper.New()
+	Core = viper.New()
+	cm.core = Core
 	cm.core.SetConfigFile(defaultFile)
 	err := cm.core.ReadInConfig()
 	if err != nil {
-		fmt.Printf("load config err: %s\n", err)
+		panic(fmt.Sprintf("shack config: load config err: %s", err))
 	}
 }
 
@@ -87,8 +126,25 @@ func (cm *configManager) getFieldValue(key string, rv reflect.Value) (value refl
 		value = reflect.ValueOf(cm.core.GetUint64(key))
 	case reflect.Float64:
 		value = reflect.ValueOf(cm.core.GetFloat64(key))
+	case reflect.Map:
+		elem := reflect.TypeOf(rv.Interface()).Elem()
+		switch elem.Kind() {
+		case reflect.String:
+			value = reflect.ValueOf(cm.core.GetStringMapString(key))
+		case reflect.Slice:
+			value = reflect.ValueOf(cm.core.GetStringMapStringSlice(key))
+		case reflect.Interface:
+			value = reflect.ValueOf(cm.core.GetStringMap(key))
+		}
+	case reflect.Interface:
+		value = reflect.ValueOf(cm.core.Get(key))
 	default:
-		err = errors.New("shack: parse config error, can't trans value to the specify type")
+		switch rv.Interface().(type) {
+		case time.Time:
+			value = reflect.ValueOf(cm.core.GetTime(key))
+		default:
+			err = errors.New("parse config error, can't trans value to the specify type")
+		}
 	}
 
 	return
