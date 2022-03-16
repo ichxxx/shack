@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/ichxxx/shack/utils"
 )
 
 const (
@@ -12,56 +14,51 @@ const (
 	_WILD  = "*"
 )
 
+var (
+	validPathReg, _    = regexp.Compile(`^\/[:*.\-\w]*(\/[:*.\-\w]+)*$`)
+	validPatternReg, _ = regexp.Compile(`^\/[\-\w]*(\/[\-\w]+)*$`)
+)
 
 type trie struct {
-	handlers   map[string][]HandlerFunc
-	isParam    bool
-	isPath     bool
-	p          string // p means param or path
-	childs     map[string]*trie
-	m          []string // m means the passed methods
+	handlers map[string][]Handler
+	isParam  bool
+	isPath   bool
+	childs   map[string]*trie
+	p        string   // p means param or path
+	m        []string // m means the passed methods
 }
-
 
 func newTrie() *trie {
 	return &trie{
-		handlers: make(map[string][]HandlerFunc, 7),
-		childs: make(map[string]*trie),
+		handlers: make(map[string][]Handler, 7),
+		childs:   make(map[string]*trie),
 	}
 }
-
 
 func isWild(segment string) bool {
 	if len(segment) == 0 {
 		return false
 	}
-
 	return segment[0] == _PARAM || segment[0] == _PATH
 }
 
-
-func isValidPath(path string) (isValid bool) {
-	isValid, _ = regexp.MatchString(`^\/[:*.\-\w]*(\/[:*.\-\w]+)*$`, path)
-	return
+func isValidPath(path string) bool {
+	return validPathReg.MatchString(path)
 }
 
-
-func isValidPattern(pattern string) (isValid bool) {
-	isValid, _ = regexp.MatchString(`^\/[\-\w]*(\/[\-\w]+)*$`, pattern)
-	return
+func isValidPattern(pattern string) bool {
+	return validPatternReg.MatchString(pattern)
 }
-
 
 // With adds one or more middlewares for an endpoint handler.
-func(t *trie) With(middleware ...HandlerFunc) {
+func (t *trie) With(middleware ...Handler) {
 	// insert from head
 	for _, method := range t.m {
 		t.handlers[method] = append(middleware, t.handlers[method]...)
 	}
 }
 
-
-func(t *trie) insert(path string, handler HandlerFunc, methods ...string) *trie {
+func (t *trie) insert(path string, handler Handler, methods ...string) *trie {
 	if !isValidPath(path) {
 		panic(fmt.Sprintf("shack: path '%s' is not valid", path))
 	}
@@ -90,7 +87,7 @@ func(t *trie) insert(path string, handler HandlerFunc, methods ...string) *trie 
 			t.isPath = true
 			t.p = p[1:]
 			if i != len(segments)-1 {
-				panic(fmt.Sprintf("shack: '%s' *path can only use in the last", path))
+				panic(fmt.Sprintf("shack: '*' can only use in the last in path '%s'", path))
 			}
 		}
 	}
@@ -115,13 +112,12 @@ func(t *trie) insert(path string, handler HandlerFunc, methods ...string) *trie 
 	return t
 }
 
-
-func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[string]string, ok bool) {
+func (t *trie) search(method, path []byte) (handlers []Handler, params map[string]string, ok bool) {
 	i := 1
-	var splitLoc int
+	var splitPos int
 	for ; i < len(path); i++ {
 		if path[i] == '/' {
-			next := t.next(path[splitLoc+1:i])
+			next := t.next(utils.UnsafeString(path[splitPos+1 : i]))
 			if next == nil {
 				return
 			}
@@ -131,7 +127,7 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = path[splitLoc:]
+				params[t.p] = utils.UnsafeString(path[splitPos:])
 				break
 			}
 
@@ -139,15 +135,15 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 				if params == nil {
 					params = make(map[string]string)
 				}
-				params[t.p] = path[splitLoc+1:i]
+				params[t.p] = utils.UnsafeString(path[splitPos+1 : i])
 			}
 
-			splitLoc = i
+			splitPos = i
 		}
 	}
 
 	if i > 1 && !t.isPath {
-		next := t.next(path[splitLoc+1:i])
+		next := t.next(utils.UnsafeString(path[splitPos+1 : i]))
 		if next == nil {
 			return
 		}
@@ -158,10 +154,10 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 		if params == nil {
 			params = make(map[string]string)
 		}
-		params[t.p] = path[splitLoc+1:i]
+		params[t.p] = utils.UnsafeString(path[splitPos+1 : i])
 	}
 
-	handlers = t.handlers[method]
+	handlers = t.handlers[utils.UnsafeString(method)]
 	if handlers == nil {
 		handlers = t.handlers[_ALL]
 	}
@@ -169,8 +165,7 @@ func(t *trie) search(method, path string) (handlers []HandlerFunc, params map[st
 	return
 }
 
-
-func(t *trie) next(segment string) (next *trie) {
+func (t *trie) next(segment string) (next *trie) {
 	next = t.childs[segment]
 	if next == nil {
 		next = t.childs[_WILD]
@@ -178,15 +173,13 @@ func(t *trie) next(segment string) (next *trie) {
 	return
 }
 
-
-func(t *trie) print() {
-	t.dfs(1)
+func (t *trie) print() {
+	t.dfsPrint(1)
 }
 
-
-func(t *trie) dfs(count int) {
+func (t *trie) dfsPrint(count int) {
 	for key, child := range t.childs {
 		fmt.Println(strings.Repeat("-", count), key)
-		child.dfs(count+1)
+		child.dfsPrint(count + 1)
 	}
 }

@@ -1,4 +1,0 @@
-[test]
-name = "shack"
-port = 8080
-foo_bar = ["1", "2"]

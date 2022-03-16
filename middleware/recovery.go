@@ -11,20 +11,18 @@ import (
 	"github.com/ichxxx/shack"
 )
 
-
-func Recovery() shack.HandlerFunc {
+func Recovery() shack.Handler {
 	return func(ctx *shack.Context) {
 		defer func() {
 			if err := recover(); err != nil {
 				log.Printf("%s\n\n", trace(fmt.Sprintf("%s", err)))
-				ctx.HttpStatus(http.StatusInternalServerError)
+				ctx.Response.Status(http.StatusInternalServerError)
 			}
 		}()
 
 		ctx.Next()
 	}
 }
-
 
 func trace(message string) string {
 	var pcs [32]uintptr
