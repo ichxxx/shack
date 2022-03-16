@@ -42,7 +42,7 @@ func AccessLog(path ...string) shack.Handler {
 
 		accessLogger.Info("",
 			zap.Float64("response_ms", durationMs),
-			zap.String("uri", ctx.Request.URI()),
+			zap.String("path", ctx.Request.Path()),
 			zap.String("method", ctx.Request.Method()),
 			zap.String("query", ctx.Request.RawQuery()),
 			zap.Int("code", ctx.Response.StatusCode),

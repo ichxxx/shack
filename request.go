@@ -26,6 +26,10 @@ func (r *Request) Method() string {
 	return r.Request.Method
 }
 
+func (r *Request) Path() string {
+	return r.Request.URL.Path
+}
+
 func (r *Request) URI() string {
 	return r.Request.RequestURI
 }

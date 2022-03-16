@@ -57,10 +57,10 @@ func OpenTelemetry(service string, opts ...OtelOption) shack.Handler {
 		opts := []oteltrace.SpanStartOption{
 			oteltrace.WithAttributes(semconv.NetAttributesFromHTTPRequest("tcp", ctx.Request.Request)...),
 			oteltrace.WithAttributes(semconv.EndUserAttributesFromHTTPRequest(ctx.Request.Request)...),
-			oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(service, ctx.Request.URI(), ctx.Request.Request)...),
+			oteltrace.WithAttributes(semconv.HTTPServerAttributesFromHTTPRequest(service, ctx.Request.Path(), ctx.Request.Request)...),
 			oteltrace.WithSpanKind(oteltrace.SpanKindServer),
 		}
-		spanName := ctx.Request.URI()
+		spanName := ctx.Request.Path()
 		if spanName == "" {
 			spanName = fmt.Sprintf("HTTP %s route not found", ctx.Request.Method())
 		}
