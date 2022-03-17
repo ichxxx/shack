@@ -26,7 +26,7 @@ func ParseFlag(name string) *configManager {
 }
 
 func (cm *configManager) ParseFlag(name string) *configManager {
-	flag.StringVar(&defaultFile, name, "-c", "配置文件路径")
+	flag.StringVar(&cm.file, name, "-c", "配置文件路径")
 	flag.Parse()
 	return cm
 }
@@ -96,7 +96,7 @@ func (cm *configManager) Options(opts ...func(v *viper.Viper)) *configManager {
 func (cm *configManager) loadConfig() {
 	Core = viper.New()
 	cm.core = Core
-	cm.core.SetConfigFile(defaultFile)
+	cm.core.SetConfigFile(cm.file)
 	err := cm.core.ReadInConfig()
 	if err != nil {
 		panic(fmt.Sprintf("shack config: load config err: %s", err))

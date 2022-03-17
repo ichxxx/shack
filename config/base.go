@@ -6,10 +6,13 @@ import (
 	"unicode"
 )
 
-var (
+const (
 	defaultTag  = "config"
 	defaultFile = "config.yaml"
-	manager     = &configManager{
+)
+
+var (
+	manager = &configManager{
 		file:    defaultFile,
 		tag:     defaultTag,
 		configs: map[string]config{},
@@ -72,7 +75,7 @@ func (b *Base) mapConfig() {
 			continue
 		}
 
-		configField, _ := getConfigField(structField)
+		configField, _ := b.getConfigField(structField)
 		if configField == "-" {
 			continue
 		}
@@ -87,8 +90,8 @@ func (b *Base) mapConfig() {
 	}
 }
 
-func getConfigField(structField reflect.StructField) (name string, option string) {
-	tag := structField.Tag.Get(defaultTag)
+func (b *Base) getConfigField(structField reflect.StructField) (name string, option string) {
+	tag := structField.Tag.Get(b.tag)
 	name, option = parseTag(tag)
 
 	if !isValidTag(name) {
