@@ -75,7 +75,7 @@ func (cm *configManager) Load() {
 
 	cm.loadConfig()
 	for _, c := range cm.configs {
-		c.mapConfig()
+		c.mapConfig(cm.tag)
 	}
 	for _, c := range cm.configs {
 		c.Init()

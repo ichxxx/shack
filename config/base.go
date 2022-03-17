@@ -21,7 +21,6 @@ var (
 
 type Base struct {
 	config  config
-	tag     string
 	section string
 }
 
@@ -30,7 +29,7 @@ type config interface {
 	Get(key string) interface{}
 	Set(key string, value interface{}) error
 	bind(config, string)
-	mapConfig()
+	mapConfig(tag string)
 }
 
 func (b *Base) Init() {}
@@ -52,7 +51,7 @@ func (b *Base) bind(config config, section string) {
 	b.section = section
 }
 
-func (b *Base) mapConfig() {
+func (b *Base) mapConfig(tag string) {
 	p := reflect.ValueOf(b.config)
 	if p.Kind() != reflect.Ptr || p.IsNil() {
 		panic("shack config: dst is not a pointer")
@@ -75,7 +74,7 @@ func (b *Base) mapConfig() {
 			continue
 		}
 
-		configField, _ := b.getConfigField(structField)
+		configField, _ := getConfigField(structField, tag)
 		if configField == "-" {
 			continue
 		}
@@ -90,25 +89,25 @@ func (b *Base) mapConfig() {
 	}
 }
 
-func (b *Base) getConfigField(structField reflect.StructField) (name string, option string) {
-	tag := structField.Tag.Get(b.tag)
-	name, option = parseTag(tag)
+func getConfigField(structField reflect.StructField, tag string) (name string, option string) {
+	tagValue := structField.Tag.Get(tag)
+	name, option = parseTagValue(tagValue)
 
-	if !isValidTag(name) {
+	if !isValidTagValue(name) {
 		return structField.Name, ""
 	}
 
 	return
 }
 
-func parseTag(s string) (tag string, option string) {
+func parseTagValue(s string) (tag string, option string) {
 	if idx := strings.Index(s, ","); idx != -1 {
 		return tag[:idx], tag[idx+1:]
 	}
 	return s, ""
 }
 
-func isValidTag(s string) bool {
+func isValidTagValue(s string) bool {
 	if s == "" {
 		return false
 	}
