@@ -21,6 +21,10 @@ func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 		}
 	case reflect.Struct:
 		for k, v := range m {
+			if len(v) == 0 {
+				continue
+			}
+
 			t := rv.Type()
 			size := rv.NumField()
 			if size == 0 {
@@ -43,19 +47,21 @@ func mapTo(rv reflect.Value, m map[string]string, tag ...string) error {
 				}
 				key := field.Tag.Get(_tag)
 				if len(key) == 0 {
-					if field.Name == k {
-						rv.Field(i).Set(toValue(v, rv.Field(i).Kind()))
-					}
-					continue fieldLoop
+					key = field.Name
 				}
 
 				if key == "-" {
 					continue fieldLoop
 				}
 
-				key = strings.TrimSuffix(key, ",omitempty")
+				key = strings.Split(key, ",")[0]
 				if key == k {
-					rv.Field(i).Set(toValue(v, rv.Field(i).Kind()))
+					rvField := rv.Field(i)
+					if rvField.Kind() == reflect.Ptr {
+						rvField.Set(toValuePtr(v, rvField.Type().Elem().Kind()))
+					} else {
+						rvField.Set(toValue(v, rvField.Kind()))
+					}
 				}
 			}
 		}
@@ -112,4 +118,64 @@ func toValue(src string, dType reflect.Kind) reflect.Value {
 	}
 
 	return reflect.ValueOf(src)
+}
+
+func toValuePtr(src string, dstKind reflect.Kind) reflect.Value {
+	switch dstKind {
+	case reflect.Bool:
+		b, _ := strconv.ParseBool(src)
+		return reflect.ValueOf(&b)
+	case reflect.Int:
+		i, _ := strconv.Atoi(src)
+		return reflect.ValueOf(&i)
+	case reflect.Int8:
+		i, _ := strconv.Atoi(src)
+		i8 := int8(i)
+		return reflect.ValueOf(&i8)
+	case reflect.Int16:
+		i, _ := strconv.Atoi(src)
+		i16 := int16(i)
+		return reflect.ValueOf(&i16)
+	case reflect.Int32:
+		i, _ := strconv.Atoi(src)
+		i32 := int8(i)
+		return reflect.ValueOf(&i32)
+	case reflect.Int64:
+		i, _ := strconv.Atoi(src)
+		i64 := int64(i)
+		return reflect.ValueOf(&i64)
+	case reflect.Uint:
+		i, _ := strconv.Atoi(src)
+		ui := uint(i)
+		return reflect.ValueOf(&ui)
+	case reflect.Uint8:
+		i, _ := strconv.Atoi(src)
+		ui8 := uint8(i)
+		return reflect.ValueOf(&ui8)
+	case reflect.Uint16:
+		i, _ := strconv.Atoi(src)
+		ui16 := uint16(i)
+		return reflect.ValueOf(&ui16)
+	case reflect.Uint32:
+		i, _ := strconv.Atoi(src)
+		ui32 := uint32(i)
+		return reflect.ValueOf(&ui32)
+	case reflect.Uint64:
+		i, _ := strconv.Atoi(src)
+		ui64 := uint64(i)
+		return reflect.ValueOf(&ui64)
+	case reflect.Float32:
+		f, _ := strconv.ParseFloat(src, 32)
+		f32 := float32(f)
+		return reflect.ValueOf(&f32)
+	case reflect.Float64:
+		f, _ := strconv.ParseFloat(src, 64)
+		f64 := float64(f)
+		return reflect.ValueOf(&f64)
+	case reflect.Interface:
+		var i interface{} = src
+		return reflect.ValueOf(&i)
+	}
+
+	return reflect.ValueOf(&src)
 }
